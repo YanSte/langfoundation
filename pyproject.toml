@@ -1,0 +1,155 @@
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+[virtualenvs]
+create = true
+in-project = true
+
+[tool.poetry]
+name = "langfoundation"
+version = "1.0.0"
+description = "langfoundation"
+authors = ["Yannick Stephan <stephan.yannick@me.com>"]
+readme = "README.md"
+packages = [{include = "langfoundation"}]
+
+#################################################################
+# Required Dependencies
+#################################################################
+
+[tool.poetry.dependencies]
+# Python
+python = ">=3.9,<4.0"
+pydantic = "^2.9.2"
+
+# Lint
+mypy = "*"
+ruff = "*"
+
+# Langchain
+langchain = "^0.3.1"
+langchain-core = "^0.3.5"
+langgraph = "^0.2.28"
+langsmith = "^0.1.86"
+langchain-community = "^0.3.1"
+
+
+
+# Json
+json-repair = "^0.29.4"
+
+# Enum
+strenum = "^0.4.15"
+
+# Log
+rich = "^13.7.1"
+
+#################################################################
+# Test
+#################################################################
+
+[tool.poetry.group.test]
+optional = true
+
+[tool.poetry.group.test.dependencies]
+pytest = "^8.2.2"
+pytest-asyncio = "^0.23.6"
+
+
+[tool.pytest.ini_options]
+python_files = "test_*" # all python files that starts with test_
+python_classes = "Test*" # all python classes that starts with Test
+python_functions = "test_*" # all python functions that starts with test_
+testpaths = "tests"
+addopts = [
+    "--import-mode=importlib",
+]
+
+#################################################################
+# Lint
+#################################################################
+
+[tool.ruff]
+# Exclude a variety of commonly ignored directories.
+exclude = [
+    ".bzr",
+    ".direnv",
+    ".eggs",
+    ".git",
+    ".git-rewrite",
+    ".hg",
+    ".ipynb_checkpoints",
+    ".mypy_cache",
+    ".nox",
+    ".pants.d",
+    ".pyenv",
+    ".pytest_cache",
+    ".pytype",
+    ".ruff_cache",
+    ".svn",
+    ".tox",
+    ".venv",
+    ".vscode",
+    "__pypackages__",
+    "_build",
+    "buck-out",
+    "build",
+    "dist",
+    "node_modules",
+    "site-packages",
+    "venv",
+    ".ipynb",
+]
+line-length = 140
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "T201"]
+ignore = []
+fixable = ["ALL"]
+unfixable = []
+
+[tool.ruff.format]
+# Like Black, use double quotes for strings.
+quote-style = "double"
+indent-style = "space"
+skip-magic-trailing-comma = false
+line-ending = "auto"
+
+[tool.ruff.lint.isort]
+force-single-line = false
+combine-as-imports = true
+force-sort-within-sections = true
+order-by-type = false
+lines-after-imports = 2
+extra-standard-library = ["typing_extensions"]
+
+[tool.mypy]
+exclude = ["notebooks", "examples", "example_data"]
+
+# General settings
+check_untyped_defs = true
+disallow_untyped_calls = true
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
+ignore_missing_imports = true
+show_error_codes = true
+strict_equality = true
+warn_redundant_casts = true
+#warn_return_any = true
+warn_unreachable = true
+warn_unused_configs = true
+warn_unused_ignores = true
+no_implicit_reexport = true
+
+# Enable strict optional checking
+strict_optional = true
+
+# Enable strict None checking
+no_implicit_optional = true
+
+# Report untyped decorated functions
+disallow_untyped_decorators = true
+
+# Use namespace packages
+namespace_packages = true
