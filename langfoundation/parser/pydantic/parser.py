@@ -11,12 +11,12 @@ from langchain_core.exceptions import OutputParserException
 from langchain_core.output_parsers.transform import BaseTransformOutputParser
 from langchain_core.outputs import Generation
 from pydantic import BaseModel
+
+from langfoundation.parser.pydantic.template import PYDANTIC_STREAM_FORMAT_INSTRUCTIONS
 from langfoundation.utils.pydantic.base_model import (
     FieldType,
     render_json_schema_with_field_value,
 )
-
-from langfoundation.parser.pydantic.template import PYDANTIC_STREAM_FORMAT_INSTRUCTIONS
 
 
 Output = TypeVar("Output", bound=BaseModel)
@@ -99,7 +99,7 @@ class PydanticOutputParser(BaseTransformOutputParser[Output]):
         ```
         """
         formatted_schema = render_json_schema_with_field_value(
-            render_type=FieldType.custom("prompt"),
+            render_type=FieldType.DESCRIPTION,
             basemodel_type=self.pydantic_object,
             basemodel_linked_refs_types=self.basemodel_linked_refs_types,
         )
@@ -139,7 +139,7 @@ class PydanticOutputParser(BaseTransformOutputParser[Output]):
         ```
         """
         formatted_schema = render_json_schema_with_field_value(
-            render_type=FieldType.custom("prompt"),
+            render_type=FieldType.DESCRIPTION,
             basemodel_type=self.pydantic_object,
             basemodel_linked_refs_types=self.basemodel_linked_refs_types,
         )

@@ -89,7 +89,32 @@ class BaseNodeChain(
     @property
     def output_basemodel_linked_refs_types(self) -> List[Type[BaseModel]]:
         """
-        Returns a list of types of the linked refs of the output.
+        List of types linked reference models in the output.
+        When you Output with inner models, you have to provide the class to get the types of the linked reference models.
+        For auto generation of the Output by Models.
+
+        This property is useful in mapping the structure of the output data.
+
+        Example:
+
+        ```python
+        class PlannerQuestion(BaseModel):
+            raison: str = Field(
+                prompt="blabla",
+            )
+            question: str = Field(
+                prompt="blabla",
+            )
+
+        class PlannerOutput(BaseModel):
+        # Here we have list of PlannerQuestion
+        >>>    segmented_questions: List[PlannerQuestion] = Field(...)
+
+        >>> Add PlannerQuestion
+        @property
+        def output_basemodel_linked_refs_types(self) -> List[Type[BaseModel]]:
+            return [PlannerQuestion]
+        ```
         """
         return []
 
