@@ -80,6 +80,6 @@ class DisplayOutputParser(JsonOutputParser):
         """
         Get the tag of the parser.
         """
-        from langfoundation.callback.displays.base.tags import Tags
+        from langfoundation.callback.display.tags import Tags
 
         return Tags.get_display_tag_with_parser(self)

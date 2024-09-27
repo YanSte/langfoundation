@@ -7,12 +7,12 @@ from typing import Any, Callable, cast, Dict, Generic, List, Optional, Type, Typ
 from langchain.chains.base import Chain as BaseChain
 from langchain_core.callbacks import AsyncCallbackManagerForChainRun, CallbackManagerForChainRun
 from langchain_core.runnables import RunnableConfig
-from pydantic import BaseModel, Field
-from toolkit.pydantic.base_model import get_type_base_generic, required_fields
 
 from langfoundation.errors.error import PydanticChainError
 from langfoundation.errors.max_retry import MaxRetryError
 from langfoundation.parser.pydantic.parser import PydanticOutputParser
+from langfoundation.utils.pydantic.base_model import get_type_base_generic, required_fields
+from pydantic import BaseModel, Field
 
 
 logger = logging.getLogger(__name__)
@@ -72,7 +72,8 @@ class BasePydanticChain(
             Type[Input],
             get_type_base_generic(
                 self,
-                type_inner_class_index=0,
+                type_generic_index=1,
+                type_generic_inner_index=0,
             ),
         )
 
@@ -83,7 +84,8 @@ class BasePydanticChain(
             Type[Output],
             get_type_base_generic(
                 self,
-                type_inner_class_index=1,
+                type_generic_index=1,
+                type_generic_inner_index=1,
             ),
         )
 

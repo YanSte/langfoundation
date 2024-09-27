@@ -11,7 +11,7 @@ from langchain_core.exceptions import OutputParserException
 from langchain_core.output_parsers.transform import BaseTransformOutputParser
 from langchain_core.outputs import Generation
 from pydantic import BaseModel
-from toolkit.pydantic.base_model import (
+from langfoundation.utils.pydantic.base_model import (
     FieldType,
     render_json_schema_with_field_value,
 )

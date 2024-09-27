@@ -1,0 +1,20 @@
+name: Python Test Suite
+description: GitHub Action that tests a Python-based repository.
+runs:
+  using: composite
+  steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+          
+    - name: Install Poetry
+      if: hashFiles('poetry.lock') != ''
+      shell: bash
+      run: |
+        if ! command -v poetry &> /dev/null; then
+          pipx install poetry
+        fi
+
+    - name: Run Gary Tests
+      shell: bash
+      run: |
+        poetry run pytest

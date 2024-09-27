@@ -11,10 +11,10 @@ from langchain_core.runnables import RunnableConfig
 from langchain_core.runnables.graph import Graph
 from langgraph.graph import StateGraph
 from langgraph.graph.state import CompiledStateGraph
-from pydantic import BaseModel, Field
-from toolkit.pydantic.base_model import get_type_base_generic, populate_missing_optional_fields, required_fields
 
 from langfoundation.errors.error import PydanticChainError
+from langfoundation.utils.pydantic.base_model import get_type_base_generic, populate_missing_optional_fields, required_fields
+from pydantic import BaseModel, Field
 
 
 logger = logging.getLogger(__name__)
@@ -67,7 +67,8 @@ class BasePydanticGraphChain(
             Type[State],
             get_type_base_generic(
                 self,
-                type_inner_class_index=0,
+                type_generic_index=1,
+                type_generic_inner_index=0,
             ),
         )
 
@@ -78,7 +79,8 @@ class BasePydanticGraphChain(
             Type[Input],
             get_type_base_generic(
                 self,
-                type_inner_class_index=1,
+                type_generic_index=1,
+                type_generic_inner_index=1,
             ),
         )
 
@@ -89,7 +91,8 @@ class BasePydanticGraphChain(
             Type[Ouput],
             get_type_base_generic(
                 self,
-                type_inner_class_index=2,
+                type_generic_index=1,
+                type_generic_inner_index=2,
             ),
         )
 
@@ -108,7 +111,7 @@ class BasePydanticGraphChain(
         """
         This property returns a list of the keys of the fields State BaseModel.
         """
-        return list(self.OutputModelType.__fields__.keys())
+        return list(self.OutputModelType.model_fields.keys())
 
     # Graph
     # ---
