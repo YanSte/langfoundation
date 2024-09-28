@@ -6,7 +6,7 @@ from typing import List, Optional
 from langchain_core.documents import Document
 from strenum import LowercaseStrEnum
 
-from langfoundation.callback.display.records.base import BaseRecord
+from langfoundation.callback.base.records.base import BaseRecord
 
 
 # Retriever

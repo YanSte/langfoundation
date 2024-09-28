@@ -5,7 +5,7 @@ from typing import Optional, Union
 
 from strenum import LowercaseStrEnum
 
-from langfoundation.callback.display.records.base import BaseRecord
+from langfoundation.callback.base.records.base import BaseRecord
 
 
 class ToolsState(LowercaseStrEnum):

@@ -5,8 +5,8 @@ from typing import Optional
 
 from strenum import LowercaseStrEnum
 
-from langfoundation.callback.display.records.base import BaseRecord
-from langfoundation.callback.display.records.tool import ToolRecord
+from langfoundation.callback.base.records.base import BaseRecord
+from langfoundation.callback.base.records.tool import ToolRecord
 
 
 class AgentState(LowercaseStrEnum):

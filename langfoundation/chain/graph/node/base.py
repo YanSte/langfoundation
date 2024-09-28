@@ -13,7 +13,7 @@ from langchain_core.runnables import RunnableLambda, RunnableSerializable
 from langchain_core.runnables.config import RunnableConfig
 from pydantic import BaseModel, Field
 
-from langfoundation.callback.display.tags import Tags
+from langfoundation.callback.base.tags import Tags
 from langfoundation.chain.graph.node.input import BaseInput
 from langfoundation.chain.pydantic.chain import BasePydanticChain
 from langfoundation.errors.max_retry import MaxRetryError

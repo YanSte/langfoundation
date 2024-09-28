@@ -10,7 +10,7 @@ from langchain_core.messages import BaseMessage
 from langchain_core.outputs import LLMResult
 from langfoundation.utils.debug.formatter import Formatter
 
-from langfoundation.callback.debug.type import AsyncLogHandlerType
+from langfoundation.callback.debug.log.type import AsyncLogHandlerType
 
 
 logger = logging.getLogger(None)

@@ -10,16 +10,13 @@ from langchain_core.documents import Document
 from langchain_core.messages import BaseMessage
 from langchain_core.outputs import LLMResult
 
-from langfoundation.callback.display.records.agent import AgentRecord, AgentState
-from langfoundation.callback.display.records.retriever import RetrieverRecord, RetrieverState
-from langfoundation.callback.display.records.token import TokenOrigin, TokenStream, TokenStreamState
-from langfoundation.callback.display.records.tool import ToolRecord, ToolsState
-from langfoundation.callback.display.tags import Tags
+from langfoundation.callback.base.records.agent import AgentRecord, AgentState
+from langfoundation.callback.base.records.retriever import RetrieverRecord, RetrieverState
+from langfoundation.callback.base.records.token import TokenOrigin, TokenStream, TokenStreamState
+from langfoundation.callback.base.records.tool import ToolRecord, ToolsState
+from langfoundation.callback.base.tags import Tags
 from langfoundation.parser.display.parser import DisplayOutputParser
 from langfoundation.utils.debug.formatter import Formatter
-
-
-# NOTE: Maybe see when two LLM in simultaneously?
 
 
 class BaseAsyncDisplayCallbackHandler(AsyncCallbackHandler, ABC):
@@ -84,6 +81,7 @@ class BaseAsyncDisplayCallbackHandler(AsyncCallbackHandler, ABC):
         Abstract method to handle an agent event.
         """
 
+    @abstractmethod
     async def on_feedback(self, feedback: str, **kwargs: Any) -> None:
         """
         Abstract method to handle a feedback event.

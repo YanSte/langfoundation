@@ -4,19 +4,19 @@ from unittest.mock import AsyncMock
 from langchain_core.agents import AgentAction
 import pytest
 
-from langfoundation.callback.display.base import (
+from langfoundation.callback.base.base import (
     BaseAsyncDisplayCallbackHandler,
 )
-from langfoundation.callback.display.records.agent import AgentRecord
-from langfoundation.callback.display.records.retriever import (
+from langfoundation.callback.base.records.agent import AgentRecord
+from langfoundation.callback.base.records.retriever import (
     RetrieverRecord,
 )
-from langfoundation.callback.display.records.token import TokenStream
-from langfoundation.callback.display.records.tool import (
+from langfoundation.callback.base.records.token import TokenStream
+from langfoundation.callback.base.records.tool import (
     ToolRecord,
     ToolsState,
 )
-from langfoundation.callback.display.tags import Tags
+from langfoundation.callback.base.tags import Tags
 
 
 @pytest.mark.asyncio

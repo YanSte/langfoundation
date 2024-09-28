@@ -5,7 +5,7 @@ from typing import Any, Optional, TypeVar
 from langchain_core.output_parsers import JsonOutputParser
 from pydantic import BaseModel, Field, PrivateAttr
 
-from langfoundation.callback.display.records.token import (
+from langfoundation.callback.base.records.token import (
     TokenStream,
     TokenStreamState,
 )
@@ -80,6 +80,6 @@ class DisplayOutputParser(JsonOutputParser):
         """
         Get the tag of the parser.
         """
-        from langfoundation.callback.display.tags import Tags
+        from langfoundation.callback.base.tags import Tags
 
         return Tags.get_display_tag_with_parser(self)

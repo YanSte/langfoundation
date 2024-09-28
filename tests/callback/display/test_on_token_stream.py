@@ -6,20 +6,20 @@ from langchain_core.outputs.generation import Generation
 from pydantic import BaseModel
 import pytest
 
-from langfoundation.callback.display.base import (
+from langfoundation.callback.base.base import (
     BaseAsyncDisplayCallbackHandler,
 )
-from langfoundation.callback.display.records.agent import AgentRecord
-from langfoundation.callback.display.records.retriever import (
+from langfoundation.callback.base.records.agent import AgentRecord
+from langfoundation.callback.base.records.retriever import (
     RetrieverRecord,
 )
-from langfoundation.callback.display.records.token import (
+from langfoundation.callback.base.records.token import (
     TokenOrigin,
     TokenStream,
     TokenStreamState,
 )
-from langfoundation.callback.display.records.tool import ToolRecord
-from langfoundation.callback.display.tags import Tags
+from langfoundation.callback.base.records.tool import ToolRecord
+from langfoundation.callback.base.tags import Tags
 from langfoundation.parser.display.parser import DisplayOutputParser
 
 

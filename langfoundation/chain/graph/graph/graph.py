@@ -5,7 +5,7 @@ from typing import TypeVar
 
 from pydantic import BaseModel
 
-from langfoundation.callback.display.tags import Tags
+from langfoundation.callback.base.tags import Tags
 from langfoundation.chain.pydantic.graph import BasePydanticGraphChain
 
 
