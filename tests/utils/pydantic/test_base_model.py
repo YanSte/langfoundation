@@ -4,7 +4,8 @@ import json
 from typing import Any, Dict, List
 
 from pydantic import BaseModel, Field
-from toolkit.pydantic.base_model import FieldType, render_json_schema_with_field_value
+
+from langfoundation.utils.pydantic.base_model import FieldType, render_json_schema_with_field_value
 
 
 class SelectedTool(BaseModel):
@@ -15,7 +16,6 @@ class SelectedTool(BaseModel):
     name: str = Field(
         description="Name of the N tool.",
         default="value",
-        prompt="Custom prompt",
     )
     arguments: Dict[str, Any] = Field(
         description="The arguments for the N tool, a dictionnary type of Dict[str, Any].",
@@ -35,7 +35,6 @@ class UseToolsWithCustomKeyField(BaseModel):
     )
     value: int = Field(
         description="this int",
-        prompt="Custom prompt",
     )
     value2: int = Field(
         description="this int3",
@@ -171,23 +170,23 @@ def test_formatting_when_render_type_description_should_provide_format_on_descri
 def test_formatting_when_custom_field_key_should_provide_on_custom_field_key() -> None:
     # Arrange
     formatted_schema = render_json_schema_with_field_value(
-        render_type=FieldType.custom("description"),
+        render_type=FieldType.DESCRIPTION,
         basemodel_type=UseToolsWithCustomKeyField,
         basemodel_linked_refs_types=[SelectedTool],
     )
 
     expected_format = """
-    {
-        "tools": [
+        {
+        "tools":[
             {
-                "raison": "",
-                "name": "Custom prompt",
-                "arguments": ""
+                "raison":"In short explain, step-by-step, your thinking for this chosen N tool you choose.",
+                "name":"Name of the N tool.",
+                "arguments":"The arguments for the N tool, a dictionnary type of Dict[str, Any]."
             }
         ],
-        "value": "Custom prompt",
-        "value2": ""
-    }
+        "value":"this int",
+        "value2":"this int3"
+        }
     """
     expected_format = json.loads(expected_format)
 

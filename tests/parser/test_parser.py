@@ -1,5 +1,5 @@
 import json
-from typing import Dict, List, Optional
+from typing import Dict, List
 
 from langchain_core.exceptions import OutputParserException
 from langchain_core.outputs import Generation
@@ -133,6 +133,7 @@ def test_get_output_format() -> None:
 
     GIVEN:
         - A PydanticOutputParser with a given pydantic object
+        - The given pydantic object has a property with a description
 
     WHEN:
         - The get_format_instructions method is called
@@ -140,28 +141,20 @@ def test_get_output_format() -> None:
     THEN:
         - The method returns a string describing the JSON schema expected
           of the output, which contains the names of the properties in the
-          pydantic object
+          pydantic object, as well as their description
     """
 
+    # Arrange
     class MockModel(BaseModel):
-        property1: str = Field(prompt="Property 1")
+        property1: str = Field(description="Property 1")
         property2: List[Dict[str, str]] = Field(
-            prompt={
-                "subproperty1": "Subproperty 1",
-                "subproperty2": "Subproperty 2",
-            }
+            description='In format of: {"subproperty1": "Subproperty 1", "subproperty2": "Subproperty 2"}'
         )
 
     parser = PydanticOutputParser(pydantic_object=MockModel)
 
-    expected_schema = json.dumps(
-        {
-            "property1": "Property 1",
-            "property2": {
-                "subproperty1": "Subproperty 1",
-                "subproperty2": "Subproperty 2",
-            },
-        },
+    expected_schema = (
+        '{"property1": "Property 1", "property2": "In format of: {"subproperty1": "Subproperty 1", "subproperty2": "Subproperty 2"}"}'  # noqa
     )
 
     expected_output = parser.format_instructions.format(schema=expected_schema)
@@ -176,47 +169,33 @@ def test_get_output_format() -> None:
 def test_get_output_format_with_optional_property() -> None:
     """
     Tests that the get_format_instructions method correctly returns a string
-    describing the JSON schema expected of the output when one of the properties
-    is optional.
+    describing the JSON schema expected of the output, including default values
+    for each property, when the Field has a default value.
 
     GIVEN:
         - A PydanticOutputParser with a given pydantic object
-        - The given pydantic object has a property with an optional type
 
     WHEN:
-        - The get_format_instructions method is called
+        - The get_format_value_instructions method is called
 
     THEN:
         - The method returns a string describing the JSON schema expected
           of the output, which contains the names of the properties in the
-          pydantic object, as well as their optional status
+          pydantic object, as well as their default values
     """
 
     # Arrange
     class MockModel(BaseModel):
-        property1: str = Field(
-            prompt="Property 1",
-        )
-        property2: Optional[List[Dict[str, str]]] = Field(
-            None,
-            repr=True,
-            prompt={
-                "subproperty1": "Subproperty 1",
-                "subproperty2": "Subproperty 2",
-            },
+        # A string field with a description
+        property1: str = Field(description="Property 1")
+        # A list of dictionaries with a description
+        property2: List[Dict[str, str]] = Field(
+            description="In format of: {'subproperty1': 'Subproperty 1', 'subproperty2': 'Subproperty 2'}"
         )
 
     parser = PydanticOutputParser(pydantic_object=MockModel)
 
-    expected_schema = json.dumps(
-        {
-            "property1": "Property 1",
-            "property2": {
-                "subproperty1": "Subproperty 1",
-                "subproperty2": "Subproperty 2",
-            },
-        },
-    )
+    expected_schema = "{\"property1\": \"Property 1\", \"property2\": \"In format of: {'subproperty1': 'Subproperty 1', 'subproperty2': 'Subproperty 2'}\"}"  # noqa
 
     expected_output = parser.format_instructions.format(schema=expected_schema)
 
@@ -248,12 +227,12 @@ def test_get_output_format_when_value_should_select_value() -> None:
     # Arrange
     class MockModel(BaseModel):
         property1: str = Field(
-            prompt="Property 1",
+            description="Property 1",
             default="hello",
         )
         property2: Dict[str, str] = Field(
             repr=True,
-            prompt="Property 2",
+            description="Property 2",
             default={"hello": "hello"},
         )
 
@@ -289,21 +268,28 @@ def test_get_output_format_when_complex_basemodel_with_ref_should_return_complex
 
     class SliceOutputTopicQuestion(BaseModel):
         topic: str = Field(
-            prompt="N topic should focus.",
+            description="N topic should focus.",
         )
         question: str = Field(
-            prompt="N segmented query for processing.",
+            description="N segmented query for processing.",
         )
-        topics: List[str] = Field(prompt="Segmented query for processing.", default=["test", "test"])
+        topics: List[str] = Field(
+            description="Segmented query for processing.",
+            default=["test", "test"],
+        )
 
     class SliceQuestionsOutput(BaseModel):
         """Route Path"""
 
         question: str = Field(
-            prompt="The input question to answer.",
+            description="The input question to answer.",
         )
-        thought: str = Field(prompt="Explain step-by-step your thinking for the chosen segments you will create.")
-        segments: List[SliceOutputTopicQuestion] = Field(prompt="List of segmented use question into different pieces topic and question.")
+        thought: str = Field(
+            description="Explain step-by-step your thinking for the chosen segments you will create.",
+        )
+        segments: List[SliceOutputTopicQuestion] = Field(
+            description="List of segmented use question into different pieces topic and question."
+        )
 
     # Arrange
     parser = PydanticOutputParser(

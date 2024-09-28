@@ -4,7 +4,7 @@ from abc import ABC, abstractmethod
 from typing import List, Optional
 
 from langchain_core.prompts.base import BasePromptTemplate
-from pydantic import BaseModel, Extra
+from pydantic import BaseModel
 
 from langfoundation.chain.graph.node.partial import Partial
 
@@ -45,4 +45,4 @@ class BaseInput(BaseModel, ABC):
 
     class Config:
         arbitrary_types_allowed = True
-        extra = Extra.forbid
+        extra = "forbid"

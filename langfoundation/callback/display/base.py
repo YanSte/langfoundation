@@ -33,8 +33,8 @@ class BaseAsyncDisplayCallbackHandler(AsyncCallbackHandler, ABC):
     display_tags_parsers: Dict[str, DisplayOutputParser] = {}
     should_cumulate_token: bool = True
 
-    _agent_record = None
-    _retriever_record = None
+    _agent_record: Optional[AgentRecord] = None
+    _retriever_record: Optional[RetrieverRecord] = None
     _token_stream_record: Optional[TokenStream] = None
 
     verbose: bool = False
@@ -123,7 +123,7 @@ class BaseAsyncDisplayCallbackHandler(AsyncCallbackHandler, ABC):
         """
         Handle the start of an LLM event.
         """
-        if Tags.FEEDBACK.value in tags:
+        if Tags.FEEDBACK.value in tags:  # type: ignore
             if prompts:
                 repr = serialized["repr"]
                 prompts_str = "".join(prompts)
@@ -179,7 +179,8 @@ class BaseAsyncDisplayCallbackHandler(AsyncCallbackHandler, ABC):
             )
 
         # CASE: PARSER
-        token_stream = self._token_stream_record
+        token_stream: Optional[TokenStream] = self._token_stream_record
+
         if display_parser := self._find_display_parser_by_tags(tags):
             token_stream = display_parser.display_parse(self._token_stream_record)
 
@@ -215,7 +216,7 @@ class BaseAsyncDisplayCallbackHandler(AsyncCallbackHandler, ABC):
                 final_text_feedback = "\n\nText:\n\n" + self._display_encapsule(final_text)
 
             function_calling_tools_display = ""
-            function_calling_tools = response.generations[0][0].message.tool_calls
+            function_calling_tools = response.generations[0][0].message.tool_calls  # type: ignore
             if function_calling_tools:
                 function_calling_tools_display = "\n\nFunction Calling:\n\n" + self._display_encapsule(
                     Formatter.format(function_calling_tools)
@@ -344,7 +345,7 @@ class BaseAsyncDisplayCallbackHandler(AsyncCallbackHandler, ABC):
         """
         Handle the start of a tool event.
         """
-        if Tags.TOOL_FEEDBACK.value not in tags:
+        if Tags.TOOL_FEEDBACK.value not in tags:  # type: ignore
             return
 
         if self._agent_record is None or self._agent_record.tool is None:
@@ -367,7 +368,7 @@ class BaseAsyncDisplayCallbackHandler(AsyncCallbackHandler, ABC):
         """
         Handle the end of a tool event.
         """
-        if Tags.TOOL_FEEDBACK.value not in tags:
+        if Tags.TOOL_FEEDBACK.value not in tags:  # type: ignore
             return
 
         if self._agent_record is None or self._agent_record.tool is None:
@@ -393,7 +394,7 @@ class BaseAsyncDisplayCallbackHandler(AsyncCallbackHandler, ABC):
         """
         Handle an error in a tool event.
         """
-        if Tags.TOOL_FEEDBACK.value not in tags:
+        if Tags.TOOL_FEEDBACK.value not in tags:  # type: ignore
             return
 
         if self._agent_record is None or self._agent_record.tool is None:
@@ -418,7 +419,7 @@ class BaseAsyncDisplayCallbackHandler(AsyncCallbackHandler, ABC):
         """
         Handle an agent action event.
         """
-        if Tags.AGENT_FEEDBACK.value not in tags:
+        if Tags.AGENT_FEEDBACK.value not in tags:  # type: ignore
             return
 
         kwargs["tags"] = tags
@@ -447,7 +448,7 @@ class BaseAsyncDisplayCallbackHandler(AsyncCallbackHandler, ABC):
         """
         Handle the finish of an agent event.
         """
-        if Tags.AGENT_FEEDBACK.value not in tags:
+        if Tags.AGENT_FEEDBACK.value not in tags:  # type: ignore
             return
 
         kwargs["tags"] = tags
@@ -477,7 +478,7 @@ class BaseAsyncDisplayCallbackHandler(AsyncCallbackHandler, ABC):
         """
         Handle the start of a retriever event.
         """
-        if Tags.RETRIEVER_FEEDBACK.value not in tags:
+        if Tags.RETRIEVER_FEEDBACK.value not in tags:  # type: ignore
             return
 
         kwargs["tags"] = tags
@@ -499,7 +500,7 @@ class BaseAsyncDisplayCallbackHandler(AsyncCallbackHandler, ABC):
         """
         Handle the end of a retriever event.
         """
-        if Tags.RETRIEVER_FEEDBACK.value not in tags:
+        if Tags.RETRIEVER_FEEDBACK.value not in tags:  # type: ignore
             return
 
         if self._retriever_record is None:
@@ -525,7 +526,7 @@ class BaseAsyncDisplayCallbackHandler(AsyncCallbackHandler, ABC):
         """
         Handle the start of a retriever event.
         """
-        if Tags.RETRIEVER_FEEDBACK.value not in tags:
+        if Tags.RETRIEVER_FEEDBACK.value not in tags:  # type: ignore
             return
 
         kwargs["tags"] = tags
@@ -549,7 +550,7 @@ class BaseAsyncDisplayCallbackHandler(AsyncCallbackHandler, ABC):
         Handle the end of a retriever event.
         """
 
-        if Tags.RETRIEVER_FEEDBACK.value not in tags:
+        if Tags.RETRIEVER_FEEDBACK.value not in tags:  # type: ignore
             return
 
         if self._retriever_record is None:
@@ -583,16 +584,4 @@ class BaseAsyncDisplayCallbackHandler(AsyncCallbackHandler, ABC):
         for tag in tags:
             if tag in self.display_tags_parsers:
                 return self.display_tags_parsers[tag]
-        return None
-        return None
-        return None
-        return None
-        return None
-        return None
-        return None
-        return None
-        return None
-        return None
-        return None
-        return None
         return None

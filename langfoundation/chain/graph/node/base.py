@@ -6,6 +6,7 @@ from typing import Any, Dict, List, Optional, Tuple, Type, TypeVar, Union
 
 from langchain_core.callbacks.manager import AsyncCallbackManagerForChainRun
 from langchain_core.language_models import BaseLanguageModel
+from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.output_parsers.base import BaseOutputParser
 from langchain_core.prompts.base import BasePromptTemplate
 from langchain_core.runnables import RunnableLambda, RunnableSerializable
@@ -145,7 +146,7 @@ class BaseNodeChain(
         """
         config = self.get_config(run_manager)
 
-        llm = self.llm_config.model(self.is_display)
+        llm = self._llm()
 
         parser = self._parser(
             input,
@@ -184,7 +185,7 @@ class BaseNodeChain(
         """
         config = self.get_config(run_manager)
 
-        llm = self.fallback_llm_config.model(self.is_display)
+        llm = self._fallback_llm()
 
         parser = self._parser(
             input,
@@ -214,6 +215,45 @@ class BaseNodeChain(
 
     # Chain
     # ---
+
+    def _llm(
+        self,
+    ) -> BaseChatModel:
+        """
+        Returns the output parser.
+        """
+        llm = self.llm_config.model
+
+        if hasattr(llm, "streaming"):
+            llm.streaming = self.is_display  # type: ignore
+
+        # We assum if not display, then it is not streaming
+        llm.disable_streaming = not self.is_display
+
+        return llm
+
+    def _fallback_llm(
+        self,
+    ) -> BaseChatModel:
+        """
+        Returns the output parser.
+        """
+        llm = self.fallback_llm_config.model
+
+        if hasattr(llm, "streaming"):
+            llm.streaming = self.is_display  # type: ignore
+
+        # We assum if not display, then it is not streaming
+        llm.disable_streaming = not self.is_display
+
+        logger.info(
+            {"Model Config:": llm._identifying_params},
+            extra={
+                "title": "[Invoke] " + " : " + self._chain_type,
+                "verbose": True,
+            },
+        )
+        return llm
 
     def _prompt(
         self,

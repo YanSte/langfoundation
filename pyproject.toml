@@ -8,7 +8,7 @@ in-project = true
 
 [tool.poetry]
 name = "langfoundation"
-version = "1.0.1"
+version = "1.0.2"
 description = "langfoundation"
 authors = ["Yannick Stephan <stephan.yannick@me.com>"]
 readme = "README.md"

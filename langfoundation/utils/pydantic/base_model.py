@@ -1,3 +1,4 @@
+import codecs
 from enum import auto, StrEnum
 import json
 from typing import Any, cast, Dict, get_args, Iterator, List, Type, Union
@@ -176,7 +177,7 @@ def get_dict_schema_with_field_value(
         return descriptions
 
     try:
-        schema = model.schema()
+        schema = model.model_json_schema()
     except Exception as e:
         raise ImportError(
             f"""Error occurs with {model} shema.
@@ -212,7 +213,15 @@ def render_json_schema_with_field_value(
         basemodel_linked_refs_types,
     )
 
-    return json.dumps(formatted_schema)
+    output_format = json.dumps(formatted_schema)
+
+    # Unicode escape sequences non-ASCII characters using their Unicode code points. Replace \u0022.
+    output_format = codecs.decode(output_format, "unicode_escape")
+
+    # Remove the \ characters
+    output_format = output_format.replace("\\", "")
+
+    return output_format
 
 
 def get_type_base_generic(
