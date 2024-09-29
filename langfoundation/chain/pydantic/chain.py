@@ -1,19 +1,33 @@
 from __future__ import annotations
 
-from abc import ABC, abstractmethod
 import logging
-from typing import Any, Callable, cast, Dict, Generic, List, Optional, Type, TypeVar, Union
+from abc import ABC, abstractmethod
+from typing import (
+    Any,
+    Dict,
+    Generic,
+    List,
+    Optional,
+    Type,
+    TypeVar,
+    Union,
+    cast,
+)
 
 from langchain.chains.base import Chain as BaseChain
-from langchain_core.callbacks import AsyncCallbackManagerForChainRun, CallbackManagerForChainRun
+from langchain_core.callbacks import (
+    AsyncCallbackManagerForChainRun,
+    CallbackManagerForChainRun,
+)
 from langchain_core.runnables import RunnableConfig
-
 from langfoundation.errors.error import PydanticChainError
 from langfoundation.errors.max_retry import MaxRetryError
-from langfoundation.parser.pydantic.parser import PydanticOutputParser
-from langfoundation.utils.pydantic.base_model import get_type_base_generic, required_fields
-from pydantic import BaseModel, Field
+from langfoundation.utils.pydantic.base_model import (
+    get_type_base_generic,
+    required_fields,
+)
 
+from pydantic import BaseModel, Field
 
 logger = logging.getLogger(__name__)
 
@@ -109,7 +123,11 @@ class BasePydanticChain(
     # ---
 
     @abstractmethod
-    async def acall(self, input: Input, run_manager: Optional[AsyncCallbackManagerForChainRun]) -> Output:  # type: ignore
+    async def acall(  # type: ignore[override]
+        self,
+        input: Input,
+        run_manager: Optional[AsyncCallbackManagerForChainRun],  # type: ignore  # noqa: F821
+    ) -> Output:  # type: ignore  # noqa: F821
         """
         Abstract method that must be implemented by subclasses.
 
@@ -128,12 +146,16 @@ class BasePydanticChain(
 
         This asynchronous method is designed to handle any fallback operations in the event of an error during the call.
         """
-        raise NotImplementedError("Not implemented, `fallback_max_retries` with True but `afallback` is not implemented.")
+        raise NotImplementedError(
+            "Not implemented, `fallback_max_retries` with True but `afallback` is not implemented."
+        )
 
     # Sync
     # ---
 
-    def call(self, input: Input, run_manager: Optional[CallbackManagerForChainRun]) -> Output:
+    def call(
+        self, input: Input, run_manager: Optional[CallbackManagerForChainRun]
+    ) -> Output:
         """
         Abstract method that must be implemented by subclasses.
 
@@ -152,7 +174,9 @@ class BasePydanticChain(
 
         This method is designed to handle any fallback operations in the event of an error during the call.
         """
-        raise NotImplementedError("Not implemented, `fallback_max_retries` with True but `fallback` is not implemented.")
+        raise NotImplementedError(
+            "Not implemented, `fallback_max_retries` with True but `fallback` is not implemented."
+        )
 
     # Invoke
     # ---
@@ -172,14 +196,20 @@ class BasePydanticChain(
 
         logger.info(
             input,
-            extra={"title": "[Start] Invoke" + " : " + self._chain_type, "verbose": self.verbose},
+            extra={
+                "title": "[Start] Invoke" + " : " + self._chain_type,
+                "verbose": self.verbose,
+            },
         )
 
         output = await super().ainvoke(input=input, config=config, kwargs=kwargs)
 
         logger.info(
             output,
-            extra={"title": "[End] Invoke" + " : " + self._chain_type, "verbose": self.verbose},
+            extra={
+                "title": "[End] Invoke" + " : " + self._chain_type,
+                "verbose": self.verbose,
+            },
         )
 
         return self.OutputModelType(**output)
@@ -199,14 +229,20 @@ class BasePydanticChain(
 
         logger.info(
             input,
-            extra={"title": "[Start] Invoke" + " : " + self._chain_type, "verbose": self.verbose},
+            extra={
+                "title": "[Start] Invoke" + " : " + self._chain_type,
+                "verbose": self.verbose,
+            },
         )
 
         output = super().invoke(input=input, config=config, kwargs=kwargs)
 
         logger.info(
             output,
-            extra={"title": "[End] Invoke" + " : " + self._chain_type, "verbose": self.verbose},
+            extra={
+                "title": "[End] Invoke" + " : " + self._chain_type,
+                "verbose": self.verbose,
+            },
         )
         # Convert the output to a pydantic model
         return self.OutputModelType(**output)
@@ -224,14 +260,20 @@ class BasePydanticChain(
         """
         logger.info(
             input,
-            extra={"title": "[Start] Invoke" + " : " + self._chain_type, "verbose": self.verbose},
+            extra={
+                "title": "[Start] Invoke" + " : " + self._chain_type,
+                "verbose": self.verbose,
+            },
         )
 
         output = await super().ainvoke(input, config, **kwargs)
 
         logger.info(
             output,
-            extra={"title": "[End] Invoke" + " : " + self._chain_type, "verbose": self.verbose},
+            extra={
+                "title": "[End] Invoke" + " : " + self._chain_type,
+                "verbose": self.verbose,
+            },
         )
 
         return output
@@ -249,14 +291,20 @@ class BasePydanticChain(
         """
         logger.info(
             input,
-            extra={"title": "[Start] Invoke" + " : " + self._chain_type, "verbose": self.verbose},
+            extra={
+                "title": "[Start] Invoke" + " : " + self._chain_type,
+                "verbose": self.verbose,
+            },
         )
 
         output = super().invoke(input, config, **kwargs)
 
         logger.info(
             output,
-            extra={"title": "[End] Invoke" + " : " + self._chain_type, "verbose": self.verbose},
+            extra={
+                "title": "[End] Invoke" + " : " + self._chain_type,
+                "verbose": self.verbose,
+            },
         )
         return output
 
@@ -310,7 +358,9 @@ class BasePydanticChain(
                         retries += 1
                         logger.warning(
                             retry_errors,
-                            extra={"title": "[RETRY] _acall" + " : " + self._chain_type},
+                            extra={
+                                "title": "[RETRY] _acall" + " : " + self._chain_type
+                            },
                         )
 
             # If the fallback failed, raise a PydanticChainError
@@ -364,7 +414,9 @@ class BasePydanticChain(
                         retries += 1
                         logger.warning(
                             retry_errors,
-                            extra={"title": "[RETRY] _acall" + " : " + self._chain_type},
+                            extra={
+                                "title": "[RETRY] _acall" + " : " + self._chain_type
+                            },
                         )
 
             chain_error: PydanticChainError
@@ -382,75 +434,20 @@ class BasePydanticChain(
 
             raise chain_error
 
-    # Helpers
-    # ---
-
-    def get_custom_pydantic_parser(
-        self,
-        basemodel_type: Type[BaseModel],
-        basemodel_linked_refs_types: List[Type[BaseModel]] = [],
-        post_validation: Optional[Callable[[BaseModel], bool]] = None,
-    ) -> PydanticOutputParser[BaseModel]:
-        """
-        This function is used to get a PydanticOutputParser instance.
-
-        Parameters:
-
-        - basemodel_type (Optional[Type[BaseModel]], optional):
-            The type of the base model. If not provided, Output Model of the class is used.
-
-        - basemodel_linked_refs_types (List[Type[BaseModel]], optional):
-            A list of types for linked references on the Basemodel `basemodel_type`.
-            Make an auto the Json generation of this one.
-
-        - post_validation (Optional[Callable[[BaseModel], bool]], optional):
-            A function to be called after validation. If not provided, no function is called.
-
-        """
-
-        return PydanticOutputParser(
-            pydantic_object=basemodel_type,
-            basemodel_linked_refs_types=basemodel_linked_refs_types,
-            post_validation=post_validation,
-        )
-
-    def get_output_pydantic_parser(
-        self,
-        basemodel_linked_refs_types: List[Type[BaseModel]] = [],
-        post_validation: Optional[Callable[[Output], bool]] = None,
-    ) -> PydanticOutputParser[Output]:
-        """
-        This function is used to get a PydanticOutputParser instance.
-
-        Parameters:
-
-        - basemodel_type (Optional[Type[BaseModel]], optional):
-            The type of the base model. If not provided, Output Model of the class is used.
-
-        - basemodel_linked_refs_types (List[Type[BaseModel]], optional):
-            A list of types for linked references on the Basemodel `basemodel_type`.
-            Make an auto the Json generation of this one.
-
-        - post_validation (Optional[Callable[[BaseModel], bool]], optional):
-            A function to be called after validation. If not provided, no function is called.
-
-        """
-        return PydanticOutputParser(
-            pydantic_object=self.OutputModelType,
-            basemodel_linked_refs_types=basemodel_linked_refs_types,
-            post_validation=post_validation,
-        )
-
     # Private Convert
     # ---
 
-    def _convert_input_model_to_dict(self, input: Union[Input, Dict[str, Any], BaseModel]) -> Dict[str, Any]:
+    def _convert_input_model_to_dict(
+        self, input: Union[Input, Dict[str, Any], BaseModel]
+    ) -> Dict[str, Any]:
         if isinstance(input, BaseModel):
-            return input.dict()
+            return input.model_dump()
 
         return input
 
     def _convert_output_model_to_dict(self, output: Output) -> Dict[str, Any]:
         if not isinstance(output, self.OutputModelType):
-            raise TypeError(f"Error Output not typeof {self.OutputModelType}, Got: {type(output)}")
-        return output.dict()
+            raise TypeError(
+                f"Error Output not typeof {self.OutputModelType}, Got: {type(output)}"
+            )
+        return output.model_dump()

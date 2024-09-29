@@ -4,20 +4,19 @@
 from __future__ import annotations
 
 import json
-from typing import Callable, cast, Dict, List, Optional, Type, TypeVar
+from typing import Any, Callable, Dict, List, Optional, Type, TypeVar, cast
 
 import json_repair
 from langchain_core.exceptions import OutputParserException
 from langchain_core.output_parsers.transform import BaseTransformOutputParser
 from langchain_core.outputs import Generation
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from langfoundation.parser.pydantic.template import PYDANTIC_STREAM_FORMAT_INSTRUCTIONS
 from langfoundation.utils.pydantic.base_model import (
     FieldType,
     render_json_schema_with_field_value,
 )
-
 
 Output = TypeVar("Output", bound=BaseModel)
 
@@ -26,16 +25,48 @@ class PydanticOutputParser(BaseTransformOutputParser[Output]):
     """
     Pydantic output parser that can handle streaming input.
 
-    - Note: Parser accepte only Json with "Key":Value not with ''
+    # Note:
+    - In your prompt pay attention to the format of the output.
+    - Parser accepte only Json with "Key": Value
+    - Parser accepte only Json not with '' (example: 'Key': 'Value')
     """
 
-    pydantic_object: Type[Output]
-
-    name: str = "PydanticOutputParser"
-    basemodel_linked_refs_types: List[Type[BaseModel]] = []
-    format_instructions: str = PYDANTIC_STREAM_FORMAT_INSTRUCTIONS
-
-    post_validation: Optional[Callable[[Output], bool]] = None
+    pydantic_object: Type[Output] = Field(
+        description="The type of the pydantic object that will be used to parse the output."
+    )
+    name: str = Field(
+        default="PydanticOutputParser",
+        description="The name of the parser.",
+    )
+    """
+    A list of types for linked references on the Basemodel `pydantic_object`.
+    Make an auto the Json generation of this one.
+    """
+    basemodel_linked_refs_types: List[Type[BaseModel]] = Field(
+        default=[],
+        description="""
+        A list of types for linked references on the Basemodel `pydantic_object`. 
+        Make an auto the Json generation of this one.
+        """,
+    )
+    format_instructions: str = Field(
+        default=PYDANTIC_STREAM_FORMAT_INSTRUCTIONS,
+        description="Format instructions to be displayed in the prompt.",
+    )
+    pre_transform: Optional[Callable[[Dict[str, Any]], Dict[str, Any]]] = Field(
+        default=None,
+        description="""
+        A function to be called before the parsing start to cast the output.
+        It should take the output and return a string.
+        """,
+    )
+    post_validation: Optional[Callable[[Output], bool]] = Field(
+        default=None,
+        description="""
+        A function to be called after validation.
+        It should take the output and return a boolean.        
+        """,
+    )
 
     @property
     def _type(self) -> str:
@@ -58,9 +89,15 @@ class PydanticOutputParser(BaseTransformOutputParser[Output]):
             return_objects=True,
         )
         _dict = cast(Dict, object)
+
+        if self.pre_transform:
+            _dict = self.pre_transform(_dict)
+
         return self._parse_obj(_dict)
 
-    def parse_result(self, result: List[Generation], *, partial: bool = False) -> Output:
+    def parse_result(
+        self, result: List[Generation], *, partial: bool = False
+    ) -> Output:
         """
         Parse a list of Generation objects into a pydantic model of type `OutputType`.
         """
@@ -145,7 +182,9 @@ class PydanticOutputParser(BaseTransformOutputParser[Output]):
         )
         return self.format_instructions.format(schema=formatted_schema)
 
-    def _parser_exception(self, e: Exception, json_object: dict) -> OutputParserException:
+    def _parser_exception(
+        self, e: Exception, json_object: dict
+    ) -> OutputParserException:
         json_string = json.dumps(json_object)
         name = self.pydantic_object.__name__
         msg = f"Failed to parse {name} from completion {json_string}. Got: {e}"
@@ -153,6 +192,6 @@ class PydanticOutputParser(BaseTransformOutputParser[Output]):
 
     def _parse_obj(self, obj: dict) -> Output:
         try:
-            return self.pydantic_object.parse_obj(obj)
+            return self.pydantic_object.model_validate(obj)
         except Exception as e:
             raise self._parser_exception(e, obj)

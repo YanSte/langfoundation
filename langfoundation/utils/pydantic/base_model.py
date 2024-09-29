@@ -3,6 +3,8 @@ from enum import auto, StrEnum
 import json
 from typing import Any, cast, Dict, get_args, Iterator, List, Type, Union
 
+from langchain_core.tools import StructuredTool
+
 from pydantic import BaseModel
 
 
@@ -120,7 +122,6 @@ class FieldType(StrEnum):
     The following types are supported:
         - DEFAULT: The default value of the field.
         - DESCRIPTION: The description of the field.
-        - CUSTOM: A custom field type, the value of the field is the value of the type.
     """
 
     DEFAULT = auto()
@@ -271,3 +272,31 @@ def get_type_base_generic(
         f"Runnable {class_object.get_name()} doesn't have an inferable InputType. "
         "Override the InputType property to specify the input type."
     )
+
+
+def render_tools_text_names(tools: List[StructuredTool], separator: str = "\n") -> str:
+    """Render the tool name and description in plain text."""
+    return separator.join([f"{tool.name}" for tool in tools])
+
+
+def render_tools_names_descriptions(tools: List[StructuredTool], separator: str = "\n") -> str:
+    """Render the tool name and description in plain text."""
+    return separator.join([f"{tool.name}: {tool.description}" for tool in tools])
+
+
+def render_tools_names_descriptions_args(
+    render_type: Union[FieldType, str],
+    tools: List[StructuredTool],
+    separator: str = "\n",
+) -> str:
+    """Render the tool name, description, and args in plain text."""
+    tool_strings = []
+    for tool in tools:
+        if not tool.args_schema:
+            raise ValueError(f"Define the pydantic 'args_schema' to the tool {tool.name} to make outputformat avaliable.")
+        rendered_tools = render_json_schema_with_field_value(
+            render_type=render_type,
+            basemodel_type=tool.args_schema,
+        )
+        tool_strings.append(f"- '{tool.name}': {tool.description} with args:\n```json\n{rendered_tools}```")
+    return separator.join(tool_strings)

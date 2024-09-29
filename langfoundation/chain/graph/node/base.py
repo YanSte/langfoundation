@@ -1,25 +1,42 @@
 from __future__ import annotations
 
-from abc import ABC
 import logging
-from typing import Any, Dict, List, Optional, Tuple, Type, TypeVar, Union
+from abc import ABC
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    List,
+    Optional,
+    Tuple,
+    Type,
+    TypeVar,
+    Union,
+)
 
+from langchain_core.callbacks import (
+    AsyncCallbackManagerForChainRun,
+)
 from langchain_core.callbacks.manager import AsyncCallbackManagerForChainRun
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.output_parsers.base import BaseOutputParser
 from langchain_core.prompts.base import BasePromptTemplate
-from langchain_core.runnables import RunnableLambda, RunnableSerializable
+from langchain_core.prompts.chat import SystemMessagePromptTemplate
+from langchain_core.runnables import (
+    RunnableConfig,
+    RunnableLambda,
+    RunnableSerializable,
+)
 from langchain_core.runnables.config import RunnableConfig
-from pydantic import BaseModel, Field
-
 from langfoundation.callback.base.tags import Tags
 from langfoundation.chain.graph.node.input import BaseInput
 from langfoundation.chain.pydantic.chain import BasePydanticChain
 from langfoundation.errors.max_retry import MaxRetryError
 from langfoundation.modelhub.chat.config import ChatModelConfig
+from langfoundation.parser.pydantic.parser import PydanticOutputParser
 from langfoundation.utils.py.py_class import has_method_implementation
-
+from pydantic import BaseModel, Field
 
 logger = logging.getLogger(__name__)
 
@@ -84,6 +101,13 @@ class BaseNodeChain(
             return False
         return Tags.FEEDBACK in self.tags  # type: ignore
 
+    @property
+    def with_output_format(self) -> bool:
+        """
+        Whether or not to add the output format in the prompt.
+        """
+        return True
+
     # Prompt
     # ---
 
@@ -140,7 +164,11 @@ class BaseNodeChain(
     # Call
     # ---
 
-    async def acall(self, input: Input, run_manager: Optional[AsyncCallbackManagerForChainRun]) -> Output:  # type: ignore
+    async def acall(  # type: ignore[override]
+        self,
+        input: Input,
+        run_manager: Optional[AsyncCallbackManagerForChainRun],
+    ) -> Output:
         """
         Calls the chain with the given input and run manager.
         """
@@ -265,18 +293,25 @@ class BaseNodeChain(
         """
         Prompt template and input data.
         """
-        input_data = input.prompt_arg(None).dict()
+        input_data = input.prompt_arg(None).model_dump()
+        prompt_template = input.prompt_template
 
-        if has_method_implementation(
-            BaseOutputParser.get_format_instructions.__name__,
-            parser.__class__,
-            excluded=[BaseOutputParser],
-        ):
-            output_format = parser.get_format_instructions()
-            # Add the output format instructions to the input data
-            input_data["output_format"] = output_format
+        if self.with_output_format:
+            if has_method_implementation(
+                BaseOutputParser.get_format_instructions.__name__,
+                parser.__class__,
+                excluded=[BaseOutputParser],
+            ):
+                output_format = parser.get_format_instructions()
+                # Add the output format instructions to the input data
+                input_data["output_format"] = output_format
 
-        return (input.prompt_template, input_data)
+            prompt_template = (
+                input.prompt_template
+                + SystemMessagePromptTemplate.from_template("\n\n{output_format}")
+            )
+
+        return (prompt_template, input_data)
 
     def _retry_prompt(
         self,
@@ -308,9 +343,7 @@ class BaseNodeChain(
         """
         Returns the output parser.
         """
-        return self.get_output_pydantic_parser(
-            basemodel_linked_refs_types=self.output_basemodel_linked_refs_types,
-        )
+        return self.get_output_pydantic_parser()
 
     def _chain(
         self,
@@ -383,7 +416,9 @@ class BaseNodeChain(
         """
         Raises a MaxRetryError if the fallback has reached the maximum number of retries.
         """
-        raise MaxRetryError(f"Retry Cycle {retries} without success, errors: {previous_errors}")
+        raise MaxRetryError(
+            f"Retry Cycle {retries} without success, errors: {previous_errors}"
+        )
 
     def _output(
         self,
@@ -395,3 +430,56 @@ class BaseNodeChain(
         Returns the output of the node.
         """
         raise NotImplementedError()
+
+    # Parser
+    # ---
+
+    def get_custom_pydantic_parser(
+        self,
+        basemodel_type: Type[BaseModel],
+        basemodel_linked_refs_types: List[Type[BaseModel]] = [],
+        pre_transform: Optional[Callable[[Dict[str, Any]], Dict[str, Any]]] = None,
+        post_validation: Optional[Callable[[BaseModel], bool]] = None,
+    ) -> PydanticOutputParser[BaseModel]:
+        """
+        Get a custom PydanticOutputParser for a given BaseModel.
+
+        Args:
+            basemodel_type: The type of the BaseModel to parse.
+            basemodel_linked_refs_types: A list of types linked reference models in the output.
+            pre_transform: A function to pretransform the output before cast in object.
+            post_validation: A function given a BaseModel Output and validate it.
+
+        Returns:
+            A PydanticOutputParser for the given BaseModel.
+        """
+        return PydanticOutputParser(
+            pydantic_object=basemodel_type,
+            basemodel_linked_refs_types=basemodel_linked_refs_types,
+            pre_transform=pre_transform,
+            post_validation=post_validation,
+        )
+
+    def get_output_pydantic_parser(
+        self,
+        pre_transform: Optional[Callable[[Dict[str, Any]], Dict[str, Any]]] = None,
+        post_validation: Optional[Callable[[Output], bool]] = None,
+    ) -> PydanticOutputParser[Output]:
+        """
+        This function is used to get a PydanticOutputParser with defined Output of the class.
+
+        Args:
+            basemodel_type: The type of the BaseModel to parse.
+            basemodel_linked_refs_types: A list of types linked reference models in the output.
+            pre_transform: A function to pretransform the output before cast in object.
+            post_validation: A function given a BaseModel Output and validate it.
+
+        Returns:
+            A PydanticOutputParser for the given BaseModel.
+        """
+        return PydanticOutputParser(
+            pydantic_object=self.OutputModelType,
+            basemodel_linked_refs_types=self.output_basemodel_linked_refs_types,
+            pre_transform=pre_transform,
+            post_validation=post_validation,
+        )

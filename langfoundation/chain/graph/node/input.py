@@ -3,10 +3,9 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from typing import List, Optional
 
-from langchain_core.prompts.base import BasePromptTemplate
-from pydantic import BaseModel
-
+from langchain_core.prompts.chat import ChatPromptTemplate
 from langfoundation.chain.graph.node.partial import Partial
+from pydantic import BaseModel
 
 
 class BaseInput(BaseModel, ABC):
@@ -16,7 +15,7 @@ class BaseInput(BaseModel, ABC):
 
     @property
     @abstractmethod
-    def prompt_template(self) -> BasePromptTemplate:
+    def prompt_template(self) -> ChatPromptTemplate:
         """
         Prompt template for call.
 
@@ -26,7 +25,7 @@ class BaseInput(BaseModel, ABC):
 
     @property
     @abstractmethod
-    def retry_prompt_template(self) -> BasePromptTemplate:
+    def retry_prompt_template(self) -> ChatPromptTemplate:
         """
         Prompt template for call for retry.
 
