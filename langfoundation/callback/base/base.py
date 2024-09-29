@@ -40,16 +40,11 @@ class BaseAsyncDisplayCallbackHandler(AsyncCallbackHandler, ABC):
     # Abstract
     ############################
 
-    # Token
-    # ----
     @abstractmethod
     async def on_token_stream(self, token: TokenStream, **kwargs: Any) -> None:
         """
         Abstract method to handle a stream token event.
         """
-
-    # Reriever
-    # ----
 
     @abstractmethod
     async def on_retriever(self, retriever: RetrieverRecord, **kwargs: Any) -> None:
@@ -63,17 +58,11 @@ class BaseAsyncDisplayCallbackHandler(AsyncCallbackHandler, ABC):
         Abstract method to handle a retriever event.
         """
 
-    # Tool
-    # ----
-
     @abstractmethod
     async def on_tool(self, tool: ToolRecord, **kwargs: Any) -> None:
         """
         Abstract method to handle a tool event.
         """
-
-    # Agent
-    # ----
 
     @abstractmethod
     async def on_agent(self, agent: AgentRecord, **kwargs: Any) -> None:

@@ -545,3 +545,8 @@ class InspectorAsyncBaseDisplayCallbackHandler(BaseAsyncDisplayCallbackHandler):
         Abstract method to handle an agent event.
         """
         pass
+
+    async def on_feedback(self, feedback: str, **kwargs: Any) -> None:
+        """
+        Abstract method to handle a feedback event.
+        """

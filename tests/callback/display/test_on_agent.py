@@ -199,16 +199,11 @@ class InspectorAsyncBaseDisplayCallbackHandler(BaseAsyncDisplayCallbackHandler):
         self.should_cumulate_token = should_cumulate_token
         self.verbose = verbose
 
-    # Token
-    # ----
     async def on_token_stream(self, token: TokenStream, **kwargs: Any) -> None:
         """
         Abstract method to handle a stream token event.
         """
         pass
-
-    # Reriever
-    # ----
 
     async def on_retriever(self, retriever: RetrieverRecord, **kwargs: Any) -> None:
         """
@@ -222,20 +217,20 @@ class InspectorAsyncBaseDisplayCallbackHandler(BaseAsyncDisplayCallbackHandler):
         """
         pass
 
-    # Tool
-    # ----
-
     async def on_tool(self, tool: ToolRecord, **kwargs: Any) -> None:
         """
         Abstract method to handle a tool event.
         """
         pass
 
-    # Agent
-    # ----
-
     async def on_agent(self, agent: AgentRecord, **kwargs: Any) -> None:
         """
         Abstract method to handle an agent event.
+        """
+        pass
+
+    async def on_feedback(self, feedback: str, **kwargs: Any) -> None:
+        """
+        Abstract method to handle a feedback event.
         """
         pass
