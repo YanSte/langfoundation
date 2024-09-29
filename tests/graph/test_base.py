@@ -5,6 +5,7 @@ from langgraph.graph.state import CompiledStateGraph
 from pydantic import BaseModel, Field
 import pytest
 
+from langfoundation.chain.pydantic.errors.error import PydanticChainError
 from langfoundation.chain.pydantic.graph import BasePydanticGraphChain
 
 
@@ -12,7 +13,7 @@ class StateModel(BaseModel):
     field1: str = Field(description="Field 1")
     field2: Optional[str] = Field(description="Field 2", default=None)
     field3: Optional[int] = Field(description="Field 3", default=None)
-    field4: str = Field(description="Field 4", default=None)
+    field4: Optional[str] = Field(description="Field 4", default=None)
 
 
 class InputModel(BaseModel):
@@ -159,3 +160,192 @@ def test_invoke(test_chain: TestGraphChain) -> None:
     input_dict = {"field1": "test", "field2": 123}
     output_dict = test_chain.invoke(input_dict)
     assert output_dict["field3"] == 3
+
+
+def test_invoke_declara_state_model_property_with_default_value_no_optional(test_chain: TestGraphChain) -> None:
+    """
+    Tests that the invoke method correctly raises a PydanticChainError when the StateModel is not valid.
+
+    The invoke method should raise a PydanticChainError with a message that includes the required properties
+    from OutputModel that need to be type `Optional` with default value or `None`.
+    """
+
+    class StateModel(BaseModel):
+        field1: str = Field(description="Field 1")
+        field2: str = Field(description="Field 2", default="Hello set")  # NOTE: Set by default
+
+    class InputModel(BaseModel):
+        field1: str = Field(description="Field 1")
+
+    class OutputModel(BaseModel):
+        field2: str = Field(description="Field 2", default=None)
+
+    class TestGraphChain(BasePydanticGraphChain[StateModel, InputModel, OutputModel]):
+        @property
+        def entry_point(self) -> str:
+            return "entry"
+
+        @property
+        def finish_points(self) -> List[str]:
+            return ["finish"]
+
+        def _workflow(self, workflow: StateGraph) -> None:
+            def define(state: StateModel) -> StateModel:
+                state.field1 = "field1"
+                state.field2 = "updated_fied2"
+
+                return state
+
+            workflow.add_node("entry", define)
+            workflow.add_node("finish", lambda state: state)
+            workflow.add_edge("entry", "finish")
+
+    input_dict = {"field1": "test"}
+    result = TestGraphChain().invoke_as_model(input_dict)
+
+    assert result.field2 == "updated_fied2"
+
+
+def test_invoke_raises_pydantic_chain_error_with_invalid_state_model_missing_default_value(test_chain: TestGraphChain) -> None:
+    """
+    Tests that the invoke method correctly raises a PydanticChainError when the StateModel is not valid.
+
+    The invoke method should raise a PydanticChainError with a message that includes the required properties
+    from OutputModel that need to be type `Optional` with default value or `None`.
+    """
+
+    class StateModel(BaseModel):
+        field1: str = Field(description="Field 1")
+        field2: Optional[str] = Field(description="Field 2")  # Note: Missing default value
+
+    class InputModel(BaseModel):
+        field1: str = Field(description="Field 1")
+
+    class OutputModel(BaseModel):
+        field2: str = Field(description="Field 2", default=None)
+
+    class TestGraphChain(BasePydanticGraphChain[StateModel, InputModel, OutputModel]):
+        @property
+        def entry_point(self) -> str:
+            return "entry"
+
+        @property
+        def finish_points(self) -> List[str]:
+            return ["finish"]
+
+        def _workflow(self, workflow: StateGraph) -> None:
+            def define(state: StateModel) -> StateModel:
+                state.field1 = "field1"
+                state.field2 = "field2"
+
+                return state
+
+            workflow.add_node("entry", define)
+            workflow.add_node("finish", lambda state: state)
+            workflow.add_edge("entry", "finish")
+
+    with pytest.raises(PydanticChainError) as exc_info:
+        input_dict = {"field1": "test"}
+        TestGraphChain().invoke_as_model(input_dict)
+
+    assert "OUTPUTMODEL" in str(exc_info.value)
+    assert "StateModel" in str(exc_info.value)
+    assert "field2" in str(exc_info.value)
+    assert "default" in str(exc_info.value)
+    assert "Optional" in str(exc_info.value)
+
+
+def test_invoke_raises_pydantic_chain_error_with_missing_property_in_state_model_from_input(test_chain: TestGraphChain) -> None:
+    """
+    Tests that the invoke method correctly raises a PydanticChainError when the StateModel is not valid.
+
+    The invoke method should raise a PydanticChainError with a message that includes the required properties
+    from OutputModel that need to be type `Optional` with default value or `None`.
+    """
+
+    class StateModel(BaseModel):
+        # Note: Not declared field1 from input
+        field2: Optional[str] = Field(description="Field 2", default=None)
+
+    class InputModel(BaseModel):
+        field1: str = Field(description="Field 1")
+
+    class OutputModel(BaseModel):
+        field2: str = Field(description="Field 2", default=None)
+
+    class TestGraphChain(BasePydanticGraphChain[StateModel, InputModel, OutputModel]):
+        @property
+        def entry_point(self) -> str:
+            return "entry"
+
+        @property
+        def finish_points(self) -> List[str]:
+            return ["finish"]
+
+        def _workflow(self, workflow: StateGraph) -> None:
+            def define(state: StateModel) -> StateModel:
+                # state.field1 = "field1"
+                state.field2 = "field2"
+
+                return state
+
+            workflow.add_node("entry", define)
+            workflow.add_node("finish", lambda state: state)
+            workflow.add_edge("entry", "finish")
+
+    input_dict = {"field1": "test"}
+    with pytest.raises(PydanticChainError) as exc_info:
+        TestGraphChain().invoke_as_model(input_dict)
+
+    assert "INPUTMODEL" in str(exc_info.value)
+    assert "StateModel" in str(exc_info.value)
+    assert "field1" in str(exc_info.value)
+    assert "required" in str(exc_info.value)
+
+
+def test_invoke_raises_pydantic_chain_error_with_missing_property_in_state_model_from_output(test_chain: TestGraphChain) -> None:
+    """
+    Tests that the invoke method correctly raises a PydanticChainError when the StateModel is not valid.
+
+    The invoke method should raise a PydanticChainError with a message that includes the required properties
+    from OutputModel that are missing in StateModel.
+    """
+
+    class StateModel(BaseModel):
+        field1: str = Field(description="Field 1")
+        # Note: Not declared field2 from output
+
+    class InputModel(BaseModel):
+        field1: str = Field(description="Field 1")
+
+    class OutputModel(BaseModel):
+        field2: str = Field(description="Field 2", default=None)
+
+    class TestGraphChain(BasePydanticGraphChain[StateModel, InputModel, OutputModel]):
+        @property
+        def entry_point(self) -> str:
+            return "entry"
+
+        @property
+        def finish_points(self) -> List[str]:
+            return ["finish"]
+
+        def _workflow(self, workflow: StateGraph) -> None:
+            def define(state: StateModel) -> StateModel:
+                state.field1 = "field1"
+                # state.field2 = "field2"
+
+                return state
+
+            workflow.add_node("entry", define)
+            workflow.add_node("finish", lambda state: state)
+            workflow.add_edge("entry", "finish")
+
+    input_dict = {"field1": "test"}
+    with pytest.raises(PydanticChainError) as exc_info:
+        TestGraphChain().invoke_as_model(input_dict)
+
+    assert "OUTPUTMODEL" in str(exc_info.value)
+    assert "StateModel" in str(exc_info.value)
+    assert "field2" in str(exc_info.value)
+    assert "required" in str(exc_info.value)

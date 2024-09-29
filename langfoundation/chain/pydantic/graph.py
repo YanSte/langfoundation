@@ -24,7 +24,7 @@ from langchain_core.runnables import RunnableConfig
 from langchain_core.runnables.graph import Graph
 from langgraph.graph import StateGraph
 from langgraph.graph.state import CompiledStateGraph
-from pydantic_core import InitErrorDetails, PydanticCustomError
+from pydantic_core import InitErrorDetails, PydanticCustomError, PydanticUndefined
 
 from langfoundation.chain.pydantic.errors.error import PydanticChainError
 from langfoundation.utils.pydantic.base_model import (
@@ -201,8 +201,9 @@ class BasePydanticGraphChain(
     ) -> Ouput:
         """Call the computation graph asynchronously and return model in pydantic basemodel."""
         try:
+            self._valide_input_state_output_type()
             input = self._convert_input_model_to_dict(input)
-            self._valide_state()
+
             logger.info(
                 input,
                 extra={
@@ -248,8 +249,9 @@ class BasePydanticGraphChain(
     ) -> Ouput:
         """Call the computation graph synchronously and return model in pydantic basemodel."""
         try:
+            self._valide_input_state_output_type()
             input = self._convert_input_model_to_dict(input)
-            self._valide_state()
+
             logger.info(
                 input,
                 extra={
@@ -295,6 +297,7 @@ class BasePydanticGraphChain(
     ) -> Dict[str, Any]:
         """Call the computation graph asynchronously."""
         try:
+            self._valide_input_state_output_type()
             input = self._convert_input_model_to_dict(input)
 
             logger.info(
@@ -341,6 +344,7 @@ class BasePydanticGraphChain(
     ) -> Dict[str, Any]:
         """Call the computation graph synchronously."""
         try:
+            self._valide_input_state_output_type()
             input = self._convert_input_model_to_dict(input)
 
             logger.info(
@@ -467,7 +471,7 @@ class BasePydanticGraphChain(
             return input.model_dump()
         return input
 
-    def _valide_state(self) -> None:
+    def _valide_input_state_output_type(self) -> None:
         """
         Check if the state model contains all the properties from the input model.
         Also, check if the output model contains all the properties from the state model.
@@ -478,6 +482,12 @@ class BasePydanticGraphChain(
         )
 
         self._valide_output_properties_include_in_state_models_as_optional(
+            self.OutputModelType,
+            self.StateModelType,
+        )
+
+        self._validate_other_properties_in_state_model(
+            self.InputModelType,
             self.OutputModelType,
             self.StateModelType,
         )
@@ -570,7 +580,7 @@ class BasePydanticGraphChain(
             else:
                 state_prop_field = state_fields[prop_name]
                 # Check if the property in the state model is set as Optional with default value set to None.
-                if state_prop_field.default is not None or state_prop_field.is_required():
+                if state_prop_field.default is PydanticUndefined or state_prop_field.is_required():
                     non_optional_properties.append(prop_name)
 
         if missing_properties or non_optional_properties:
@@ -591,10 +601,10 @@ class BasePydanticGraphChain(
                     InitErrorDetails(
                         type=PydanticCustomError(
                             "value_error",
-                            "In State, a property is required to be set as `None` in `default` Field and type `Optional`.",
+                            "In State, a property from Output is required to be set as type Optional with default `None` or type Non-Optional with default value.",  # noqa
                         ),
                         loc=(prop_name,),
-                        input="Field required to be None",
+                        input="Field required to be with value or None",
                     )
                 )
             e = ValidationError.from_exception_data(
@@ -608,7 +618,7 @@ class BasePydanticGraphChain(
                 custom_message += f"- {'\n- '.join(missing_properties)}\n"
 
             if non_optional_properties:
-                custom_message += "Required properties from Output in State to be type `Optional` with default value `None`:\n"
+                custom_message += "Required properties from Output in State to be type Optional with default value `None` or type Non-Optional with default value:\n"  # noqa
                 custom_message += f"- {'\n- '.join(non_optional_properties)}\n"
 
             error = PydanticChainError(
@@ -620,5 +630,58 @@ class BasePydanticGraphChain(
                 error,
                 stack_info=True,
                 extra={"title": "[ERROR] _acall" + " : " + output_model.__name__},
+            )
+            raise error
+
+    def _validate_other_properties_in_state_model(
+        self,
+        input_model: type[BaseModel],
+        output_model: type[BaseModel],
+        state_model: type[BaseModel],
+    ) -> None:
+        """
+        Check if all other properties in the state model (excluding the ones from input and output) are optional or have a default value.
+        """
+        input_fields = input_model.model_fields
+        output_fields = output_model.model_fields
+        state_fields = state_model.model_fields
+
+        invalid_properties = []
+
+        for prop_name, prop_field in state_fields.items():
+            if prop_name not in input_fields and prop_name not in output_fields:
+                if prop_field.default is PydanticUndefined or prop_field.is_required():
+                    invalid_properties.append(prop_name)
+
+        if invalid_properties:
+            line_errors = []
+            for prop_name in invalid_properties:
+                line_errors.append(
+                    InitErrorDetails(
+                        type=PydanticCustomError(
+                            "value_error",
+                            "In State, a property (Not from Input and Output) is required to be set as type Optional with default `None` or type Non-Optional with default value.",  # noqa
+                        ),
+                        loc=(prop_name,),
+                        input="Field required to be with value or None",
+                    )
+                )
+            e = ValidationError.from_exception_data(
+                f"{state_model.__name__}",
+                line_errors,
+            )
+            custom_message = f"Please have a look at `{state_model.__name__}`, Model State is not valid.\n"
+            custom_message += "Required other properties (Not from Input and Output) in State to be type Optional with default `None` or type Non-Optional with default value:\n"  # noqa
+            custom_message += f"- {'\n- '.join(invalid_properties)}\n"
+
+            error = PydanticChainError(
+                origin=state_model.__name__,
+                error=e,
+                custom_message=custom_message,
+            )
+            logger.error(
+                error,
+                stack_info=True,
+                extra={"title": "[ERROR] _acall" + " : " + state_model.__name__},
             )
             raise error
