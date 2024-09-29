@@ -196,12 +196,12 @@ class BasePydanticGraphChain(
     async def ainvoke_as_model(
         self,
         input: Union[Input, Dict[str, Any]],
-        config: RunnableConfig | None = None,
+        config: Union[RunnableConfig, None] = None,
         **kwargs: Any,
     ) -> Ouput:
         """Call the computation graph asynchronously and return model in pydantic basemodel."""
         try:
-            self._valide_input_state_output_type()
+            self._validate_input_state_output_type()
             input = self._convert_input_model_to_dict(input)
 
             logger.info(
@@ -244,12 +244,12 @@ class BasePydanticGraphChain(
     def invoke_as_model(
         self,
         input: Union[Input, Dict[str, Any]],
-        config: RunnableConfig | None = None,
+        config: Union[RunnableConfig, None] = None,
         **kwargs: Any,
     ) -> Ouput:
         """Call the computation graph synchronously and return model in pydantic basemodel."""
         try:
-            self._valide_input_state_output_type()
+            self._validate_input_state_output_type()
             input = self._convert_input_model_to_dict(input)
 
             logger.info(
@@ -297,7 +297,7 @@ class BasePydanticGraphChain(
     ) -> Dict[str, Any]:
         """Call the computation graph asynchronously."""
         try:
-            self._valide_input_state_output_type()
+            self._validate_input_state_output_type()
             input = self._convert_input_model_to_dict(input)
 
             logger.info(
@@ -344,7 +344,7 @@ class BasePydanticGraphChain(
     ) -> Dict[str, Any]:
         """Call the computation graph synchronously."""
         try:
-            self._valide_input_state_output_type()
+            self._validate_input_state_output_type()
             input = self._convert_input_model_to_dict(input)
 
             logger.info(
@@ -471,7 +471,7 @@ class BasePydanticGraphChain(
             return input.model_dump()
         return input
 
-    def _valide_input_state_output_type(self) -> None:
+    def _validate_input_state_output_type(self) -> None:
         """
         Check if the state model contains all the properties from the input model.
         Also, check if the output model contains all the properties from the state model.
@@ -561,7 +561,9 @@ class BasePydanticGraphChain(
             raise error
 
     def _valide_output_properties_include_in_state_models_as_optional(
-        self, output_model: type[BaseModel], state_model: type[BaseModel]
+        self,
+        output_model: type[BaseModel],
+        state_model: type[BaseModel],
     ) -> None:
         """
         Check if the state model contains all the properties from the output model.
