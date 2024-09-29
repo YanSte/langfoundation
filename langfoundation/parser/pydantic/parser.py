@@ -31,9 +31,7 @@ class PydanticOutputParser(BaseTransformOutputParser[Output]):
     - Parser accepte only Json not with '' (example: 'Key': 'Value')
     """
 
-    pydantic_object: Type[Output] = Field(
-        description="The type of the pydantic object that will be used to parse the output."
-    )
+    pydantic_object: Type[Output] = Field(description="The type of the pydantic object that will be used to parse the output.")
     name: str = Field(
         default="PydanticOutputParser",
         description="The name of the parser.",
@@ -45,7 +43,7 @@ class PydanticOutputParser(BaseTransformOutputParser[Output]):
     basemodel_linked_refs_types: List[Type[BaseModel]] = Field(
         default=[],
         description="""
-        A list of types for linked references on the Basemodel `pydantic_object`. 
+        A list of types for linked references on the Basemodel `pydantic_object`.
         Make an auto the Json generation of this one.
         """,
     )
@@ -64,7 +62,7 @@ class PydanticOutputParser(BaseTransformOutputParser[Output]):
         default=None,
         description="""
         A function to be called after validation.
-        It should take the output and return a boolean.        
+        It should take the output and return a boolean.
         """,
     )
 
@@ -95,9 +93,7 @@ class PydanticOutputParser(BaseTransformOutputParser[Output]):
 
         return self._parse_obj(_dict)
 
-    def parse_result(
-        self, result: List[Generation], *, partial: bool = False
-    ) -> Output:
+    def parse_result(self, result: List[Generation], *, partial: bool = False) -> Output:
         """
         Parse a list of Generation objects into a pydantic model of type `OutputType`.
         """
@@ -182,9 +178,7 @@ class PydanticOutputParser(BaseTransformOutputParser[Output]):
         )
         return self.format_instructions.format(schema=formatted_schema)
 
-    def _parser_exception(
-        self, e: Exception, json_object: dict
-    ) -> OutputParserException:
+    def _parser_exception(self, e: Exception, json_object: dict) -> OutputParserException:
         json_string = json.dumps(json_object)
         name = self.pydantic_object.__name__
         msg = f"Failed to parse {name} from completion {json_string}. Got: {e}"

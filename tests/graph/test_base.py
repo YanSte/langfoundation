@@ -111,7 +111,7 @@ async def test_invoke_as_model(test_chain: TestGraphChain) -> None:
     The invoke_as_model method should return an OutputModel instance with the same attributes as the output of the graph.
     """
     input_model = InputModel(field1="test", field2=123)
-    output_model = await test_chain.invoke_as_model(input_model)
+    output_model = test_chain.invoke_as_model(input_model)
     assert output_model.result == "test - 123"
 
 

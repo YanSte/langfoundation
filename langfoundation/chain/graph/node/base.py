@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-import logging
 from abc import ABC
+import logging
 from typing import (
     Any,
     Callable,
@@ -17,7 +17,6 @@ from typing import (
 from langchain_core.callbacks import (
     AsyncCallbackManagerForChainRun,
 )
-from langchain_core.callbacks.manager import AsyncCallbackManagerForChainRun
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.output_parsers.base import BaseOutputParser
@@ -28,7 +27,8 @@ from langchain_core.runnables import (
     RunnableLambda,
     RunnableSerializable,
 )
-from langchain_core.runnables.config import RunnableConfig
+from pydantic import BaseModel, Field
+
 from langfoundation.callback.base.tags import Tags
 from langfoundation.chain.graph.node.input import BaseInput
 from langfoundation.chain.pydantic.chain import BasePydanticChain
@@ -36,7 +36,7 @@ from langfoundation.errors.max_retry import MaxRetryError
 from langfoundation.modelhub.chat.config import ChatModelConfig
 from langfoundation.parser.pydantic.parser import PydanticOutputParser
 from langfoundation.utils.py.py_class import has_method_implementation
-from pydantic import BaseModel, Field
+
 
 logger = logging.getLogger(__name__)
 
@@ -306,10 +306,7 @@ class BaseNodeChain(
                 # Add the output format instructions to the input data
                 input_data["output_format"] = output_format
 
-            prompt_template = (
-                input.prompt_template
-                + SystemMessagePromptTemplate.from_template("\n\n{output_format}")
-            )
+            prompt_template = input.prompt_template + SystemMessagePromptTemplate.from_template("\n\n{output_format}")
 
         return (prompt_template, input_data)
 
@@ -416,9 +413,7 @@ class BaseNodeChain(
         """
         Raises a MaxRetryError if the fallback has reached the maximum number of retries.
         """
-        raise MaxRetryError(
-            f"Retry Cycle {retries} without success, errors: {previous_errors}"
-        )
+        raise MaxRetryError(f"Retry Cycle {retries} without success, errors: {previous_errors}")
 
     def _output(
         self,

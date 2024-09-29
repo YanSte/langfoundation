@@ -1,9 +1,10 @@
 from __future__ import annotations
 
-import logging
 from abc import ABC, abstractmethod
+import logging
 from typing import (
     Any,
+    cast,
     Dict,
     Generic,
     List,
@@ -11,7 +12,6 @@ from typing import (
     Type,
     TypeVar,
     Union,
-    cast,
 )
 
 from langchain.chains.base import Chain as BaseChain
@@ -20,14 +20,15 @@ from langchain_core.callbacks import (
     CallbackManagerForChainRun,
 )
 from langchain_core.runnables import RunnableConfig
-from langfoundation.errors.error import PydanticChainError
+
+from langfoundation.chain.pydantic.errors.error import PydanticChainError
 from langfoundation.errors.max_retry import MaxRetryError
 from langfoundation.utils.pydantic.base_model import (
     get_type_base_generic,
     required_fields,
 )
-
 from pydantic import BaseModel, Field
+
 
 logger = logging.getLogger(__name__)
 
@@ -126,8 +127,8 @@ class BasePydanticChain(
     async def acall(  # type: ignore[override]
         self,
         input: Input,
-        run_manager: Optional[AsyncCallbackManagerForChainRun],  # type: ignore  # noqa: F821
-    ) -> Output:  # type: ignore  # noqa: F821
+        run_manager: Optional[AsyncCallbackManagerForChainRun],
+    ) -> Output:
         """
         Abstract method that must be implemented by subclasses.
 
@@ -146,16 +147,12 @@ class BasePydanticChain(
 
         This asynchronous method is designed to handle any fallback operations in the event of an error during the call.
         """
-        raise NotImplementedError(
-            "Not implemented, `fallback_max_retries` with True but `afallback` is not implemented."
-        )
+        raise NotImplementedError("Not implemented, `fallback_max_retries` with True but `afallback` is not implemented.")
 
     # Sync
     # ---
 
-    def call(
-        self, input: Input, run_manager: Optional[CallbackManagerForChainRun]
-    ) -> Output:
+    def call(self, input: Input, run_manager: Optional[CallbackManagerForChainRun]) -> Output:
         """
         Abstract method that must be implemented by subclasses.
 
@@ -174,9 +171,7 @@ class BasePydanticChain(
 
         This method is designed to handle any fallback operations in the event of an error during the call.
         """
-        raise NotImplementedError(
-            "Not implemented, `fallback_max_retries` with True but `fallback` is not implemented."
-        )
+        raise NotImplementedError("Not implemented, `fallback_max_retries` with True but `fallback` is not implemented.")
 
     # Invoke
     # ---
@@ -192,27 +187,45 @@ class BasePydanticChain(
         Returns:
             The output of the chain as a pydantic model.
         """
-        input = self._convert_input_model_to_dict(input)
+        try:
+            input = self._convert_input_model_to_dict(input)
 
-        logger.info(
-            input,
-            extra={
-                "title": "[Start] Invoke" + " : " + self._chain_type,
-                "verbose": self.verbose,
-            },
-        )
+            logger.info(
+                input,
+                extra={
+                    "title": "[Start] Invoke" + " : " + self._chain_type,
+                    "verbose": self.verbose,
+                },
+            )
 
-        output = await super().ainvoke(input=input, config=config, kwargs=kwargs)
+            output = await super().ainvoke(input=input, config=config, kwargs=kwargs)
 
-        logger.info(
-            output,
-            extra={
-                "title": "[End] Invoke" + " : " + self._chain_type,
-                "verbose": self.verbose,
-            },
-        )
+            logger.info(
+                output,
+                extra={
+                    "title": "[End] Invoke" + " : " + self._chain_type,
+                    "verbose": self.verbose,
+                },
+            )
 
-        return self.OutputModelType(**output)
+            return self.OutputModelType(**output)
+
+        except PydanticChainError as e:
+            logger.error(
+                e,
+                stack_info=True,
+                extra={"title": "[ERROR] _acall" + " : " + self._chain_type},
+            )
+            raise e
+
+        except Exception as e:
+            error = PydanticChainError(origin=self._chain_type, error=e)
+            logger.error(
+                e,
+                stack_info=True,
+                extra={"title": "[ERROR] _acall" + " : " + self._chain_type},
+            )
+            raise error
 
     def invoke_as_model(
         self,
@@ -225,27 +238,45 @@ class BasePydanticChain(
 
         Returns the output of the chain as a pydantic model.
         """
-        input = self._convert_input_model_to_dict(input)
+        try:
+            input = self._convert_input_model_to_dict(input)
 
-        logger.info(
-            input,
-            extra={
-                "title": "[Start] Invoke" + " : " + self._chain_type,
-                "verbose": self.verbose,
-            },
-        )
+            logger.info(
+                input,
+                extra={
+                    "title": "[Start] Invoke" + " : " + self._chain_type,
+                    "verbose": self.verbose,
+                },
+            )
 
-        output = super().invoke(input=input, config=config, kwargs=kwargs)
+            output = super().invoke(input=input, config=config, kwargs=kwargs)
 
-        logger.info(
-            output,
-            extra={
-                "title": "[End] Invoke" + " : " + self._chain_type,
-                "verbose": self.verbose,
-            },
-        )
-        # Convert the output to a pydantic model
-        return self.OutputModelType(**output)
+            logger.info(
+                output,
+                extra={
+                    "title": "[End] Invoke" + " : " + self._chain_type,
+                    "verbose": self.verbose,
+                },
+            )
+
+            return self.OutputModelType(**output)
+
+        except PydanticChainError as e:
+            logger.error(
+                e,
+                stack_info=True,
+                extra={"title": "[ERROR] _acall" + " : " + self._chain_type},
+            )
+            raise e
+
+        except Exception as e:
+            error = PydanticChainError(origin=self._chain_type, error=e)
+            logger.error(
+                e,
+                stack_info=True,
+                extra={"title": "[ERROR] _acall" + " : " + self._chain_type},
+            )
+            raise error
 
     async def ainvoke(
         self,
@@ -258,25 +289,42 @@ class BasePydanticChain(
 
         Returns the output of the chain as a dictionary.
         """
-        logger.info(
-            input,
-            extra={
-                "title": "[Start] Invoke" + " : " + self._chain_type,
-                "verbose": self.verbose,
-            },
-        )
+        try:
+            logger.info(
+                input,
+                extra={
+                    "title": "[Start] Invoke" + " : " + self._chain_type,
+                    "verbose": self.verbose,
+                },
+            )
 
-        output = await super().ainvoke(input, config, **kwargs)
+            output = await super().ainvoke(input, config, **kwargs)
 
-        logger.info(
-            output,
-            extra={
-                "title": "[End] Invoke" + " : " + self._chain_type,
-                "verbose": self.verbose,
-            },
-        )
+            logger.info(
+                output,
+                extra={
+                    "title": "[End] Invoke" + " : " + self._chain_type,
+                    "verbose": self.verbose,
+                },
+            )
 
-        return output
+            return output
+        except PydanticChainError as e:
+            logger.error(
+                e,
+                stack_info=True,
+                extra={"title": "[ERROR] _acall" + " : " + self._chain_type},
+            )
+            raise e
+
+        except Exception as e:
+            error = PydanticChainError(origin=self._chain_type, error=e)
+            logger.error(
+                e,
+                stack_info=True,
+                extra={"title": "[ERROR] _acall" + " : " + self._chain_type},
+            )
+            raise error
 
     def invoke(
         self,
@@ -289,24 +337,41 @@ class BasePydanticChain(
 
         Returns the output of the chain as a dictionary.
         """
-        logger.info(
-            input,
-            extra={
-                "title": "[Start] Invoke" + " : " + self._chain_type,
-                "verbose": self.verbose,
-            },
-        )
+        try:
+            logger.info(
+                input,
+                extra={
+                    "title": "[Start] Invoke" + " : " + self._chain_type,
+                    "verbose": self.verbose,
+                },
+            )
 
-        output = super().invoke(input, config, **kwargs)
+            output = super().invoke(input, config, **kwargs)
 
-        logger.info(
-            output,
-            extra={
-                "title": "[End] Invoke" + " : " + self._chain_type,
-                "verbose": self.verbose,
-            },
-        )
-        return output
+            logger.info(
+                output,
+                extra={
+                    "title": "[End] Invoke" + " : " + self._chain_type,
+                    "verbose": self.verbose,
+                },
+            )
+            return output
+        except PydanticChainError as e:
+            logger.error(
+                e,
+                stack_info=True,
+                extra={"title": "[ERROR] _acall" + " : " + self._chain_type},
+            )
+            raise e
+
+        except Exception as e:
+            error = PydanticChainError(origin=self._chain_type, error=e)
+            logger.error(
+                e,
+                stack_info=True,
+                extra={"title": "[ERROR] _acall" + " : " + self._chain_type},
+            )
+            raise error
 
     def _fail_fallback_output(
         self,
@@ -358,16 +423,18 @@ class BasePydanticChain(
                         retries += 1
                         logger.warning(
                             retry_errors,
-                            extra={
-                                "title": "[RETRY] _acall" + " : " + self._chain_type
-                            },
+                            extra={"title": "[RETRY] _acall" + " : " + self._chain_type},
                         )
 
             # If the fallback failed, raise a PydanticChainError
             chain_error: PydanticChainError
             if isinstance(origin_error, PydanticChainError):
                 track = self._chain_type + " -> " + origin_error.origin
-                chain_error = PydanticChainError(track, origin_error.error)
+                chain_error = PydanticChainError(
+                    track,
+                    origin_error.error,
+                    custom_message=f"From Fallback to Fallback failed. From orign error:\n{str(origin_error)}\n",
+                )
             else:
                 chain_error = PydanticChainError(self._chain_type, origin_error)
 
@@ -414,15 +481,17 @@ class BasePydanticChain(
                         retries += 1
                         logger.warning(
                             retry_errors,
-                            extra={
-                                "title": "[RETRY] _acall" + " : " + self._chain_type
-                            },
+                            extra={"title": "[RETRY] _acall" + " : " + self._chain_type},
                         )
 
             chain_error: PydanticChainError
             if isinstance(origin_error, PydanticChainError):
                 track = self._chain_type + " -> " + origin_error.origin
-                chain_error = PydanticChainError(track, origin_error.error)
+                chain_error = PydanticChainError(
+                    track,
+                    origin_error.error,
+                    custom_message=f"From Fallback to Fallback failed. From orign error:\n{str(origin_error)}\n",
+                )
             else:
                 chain_error = PydanticChainError(self._chain_type, origin_error)
 
@@ -437,9 +506,7 @@ class BasePydanticChain(
     # Private Convert
     # ---
 
-    def _convert_input_model_to_dict(
-        self, input: Union[Input, Dict[str, Any], BaseModel]
-    ) -> Dict[str, Any]:
+    def _convert_input_model_to_dict(self, input: Union[Input, Dict[str, Any], BaseModel]) -> Dict[str, Any]:
         if isinstance(input, BaseModel):
             return input.model_dump()
 
@@ -447,7 +514,5 @@ class BasePydanticChain(
 
     def _convert_output_model_to_dict(self, output: Output) -> Dict[str, Any]:
         if not isinstance(output, self.OutputModelType):
-            raise TypeError(
-                f"Error Output not typeof {self.OutputModelType}, Got: {type(output)}"
-            )
+            raise TypeError(f"Error Output not typeof {self.OutputModelType}, Got: {type(output)}")
         return output.model_dump()
