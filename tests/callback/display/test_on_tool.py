@@ -1,4 +1,4 @@
-from typing import Any
+from typing import Any, List
 from unittest.mock import AsyncMock
 
 from langchain_core.agents import AgentAction
@@ -61,10 +61,10 @@ async def test_on_agent_action_should_on_agent() -> None:
 class InspectorAsyncBaseDisplayCallbackHandler(BaseAsyncDisplayCallbackHandler):
     def __init__(
         self,
-        view_tags=[],
-        feedback_tags=[],
-        display_agent_tags=[],
-        should_cumulate_token=False,
+        view_tags: List[str] = [],
+        feedback_tags: List[str] = [],
+        display_agent_tags: List[str] = [],
+        should_cumulate_token: bool = False,
         verbose: bool = True,
     ) -> None:
         self.view_tags = view_tags

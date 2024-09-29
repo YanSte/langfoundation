@@ -193,7 +193,7 @@ async def test_on_agent_finish_when_without_agent_tags_should_not_on_agent() -> 
 class InspectorAsyncBaseDisplayCallbackHandler(BaseAsyncDisplayCallbackHandler):
     def __init__(
         self,
-        should_cumulate_token=False,
+        should_cumulate_token: bool = False,
         verbose: bool = True,
     ) -> None:
         self.should_cumulate_token = should_cumulate_token
