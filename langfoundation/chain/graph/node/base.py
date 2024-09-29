@@ -99,7 +99,7 @@ class BaseNodeChain(
         """
         if not self.tags:
             return False
-        return Tags.FEEDBACK in self.tags  # type: ignore
+        return Tags.FEEDBACK.value in self.tags
 
     @property
     def with_output_format(self) -> bool:
