@@ -1,31 +1,50 @@
-from abc import abstractmethod
-from enum import StrEnum
-import logging
-from typing import Any, Type, Union
+from abc import ABC, abstractmethod
+from typing import List, Tuple
 
-from langchain_community.cross_encoders.base import BaseCrossEncoder
-from toolkit.py.abc_enum import ABCEnumMeta
-
-from langfoundation.modelhub.rerank.rank.base import BaseRerankModel
+from pydantic import BaseModel, Field
 
 
-logger = logging.getLogger(__name__)
+class BaseRerankModel(BaseModel, ABC):
+    """
+    Interface for Rerank models.
 
+    Cross encoders are models that take in a query and a list of documents, and output a score for each document in the list.
+    """
 
-class BaseRerankProvider(StrEnum, metaclass=ABCEnumMeta):
-    @property
+    top_n: int = Field(
+        description="The number of top results to return from the reranker.",
+    )
+
     @abstractmethod
-    def provider(
+    def rerank(
         self,
-    ) -> Union[
-        Type[BaseCrossEncoder],
-        Type[Any],
-    ]:
+        query: str,
+        docs: List[str],
+    ) -> List[Tuple[int, float]]:
+        """Score pairs' similarity.
+
+        Args:
+            query: The query string.
+            docs: The list of document strings.
+
+        Returns:
+            A list of tuples of index of the document in the `docs` list and the similarity score.
+        """
         raise NotImplementedError()
 
     @abstractmethod
-    def model(
+    async def arerank(
         self,
-        top_n: int,
-    ) -> BaseRerankModel:
+        query: str,
+        docs: List[str],
+    ) -> List[Tuple[int, float]]:
+        """Score pairs' similarity.
+
+        Args:
+            query: The query string.
+            docs: The list of document strings.
+
+        Returns:
+            A list of tuples of index of the document in the `docs` list and the similarity score.
+        """
         raise NotImplementedError()
