@@ -1,32 +1,16 @@
 from __future__ import annotations
 
-from abc import ABC
 import logging
-from typing import (
-    Any,
-    Callable,
-    Dict,
-    List,
-    Optional,
-    Tuple,
-    Type,
-    TypeVar,
-    Union,
-)
+from abc import ABC
+from typing import Any, Callable, Dict, List, Optional, Tuple, Type, TypeVar, Union
 
-from langchain_core.callbacks import (
-    AsyncCallbackManagerForChainRun,
-)
+from langchain_core.callbacks import AsyncCallbackManagerForChainRun
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.output_parsers.base import BaseOutputParser
 from langchain_core.prompts.base import BasePromptTemplate
 from langchain_core.prompts.chat import SystemMessagePromptTemplate
-from langchain_core.runnables import (
-    RunnableConfig,
-    RunnableLambda,
-    RunnableSerializable,
-)
+from langchain_core.runnables import RunnableConfig, RunnableLambda, RunnableSerializable
 from pydantic import BaseModel, Field
 
 from langfoundation.callback.base.tags import Tags
@@ -36,7 +20,6 @@ from langfoundation.errors.max_retry import MaxRetryError
 from langfoundation.modelhub.chat.config import ChatModelConfig
 from langfoundation.parser.pydantic.parser import PydanticOutputParser
 from langfoundation.utils.py.py_class import has_method_implementation
-
 
 logger = logging.getLogger(__name__)
 
