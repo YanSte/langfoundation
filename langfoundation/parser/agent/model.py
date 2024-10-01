@@ -40,7 +40,7 @@ class AgentState(BaseModel):
         question = values.get("question")
         thought = values.get("thought")
         action_input = values.get("action_input")
-        action: str = values.get("action", None)
+        action: Optional[str] = values.get("action", None)
 
         if cls._is_done(action):
             action = None

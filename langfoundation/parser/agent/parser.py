@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import logging
-from typing import Callable, Optional, Type, Union, cast
+from typing import Callable, Optional, Type, Union
 
 from langchain.agents.agent import AgentOutputParser as LangchainAgentOutputParser
 from langchain_core.agents import AgentAction, AgentFinish
@@ -67,7 +67,7 @@ class AgentOutputParser(LangchainAgentOutputParser):
             agent_state = self.parse(text)
 
             if isinstance(agent_state, AgentFinish):
-                agent_finish = cast(AgentFinish, agent_state)
+                agent_finish = agent_state
                 return agent_finish.return_values[self.return_values_key]
             else:
                 return None
@@ -77,4 +77,5 @@ class AgentOutputParser(LangchainAgentOutputParser):
 
     @property
     def _type(self) -> str:
+        return __class__.__name__
         return __class__.__name__

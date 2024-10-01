@@ -6,7 +6,6 @@ from typing import Any, Dict
 
 from pydantic import BaseModel
 
-
 logger = logging.getLogger(__name__)
 
 
@@ -33,7 +32,7 @@ class Formatter:
     def set_formatter(self, obj: Any, callback: Any) -> None:
         self.types[obj] = callback
 
-    def format_any(self, value: Any, indent=0) -> str:
+    def format_any(self, value: Any, indent: int = 0) -> str:
         for type_formatter, formatter in self.types.items():
             if isinstance(value, type_formatter):
                 return formatter(value, indent)

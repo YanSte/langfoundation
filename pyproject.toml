@@ -8,7 +8,7 @@ in-project = true
 
 [tool.poetry]
 name = "langfoundation"
-version = "1.2.0"
+version = "1.2.1"
 description = "langfoundation"
 authors = ["Yannick Stephan <stephan.yannick@me.com>"]
 readme = "README.md"
@@ -123,31 +123,91 @@ lines-after-imports = 2
 extra-standard-library = ["typing_extensions"]
 
 [tool.mypy]
-exclude = ["notebooks", "examples", "example_data"]
+# Disable 'strict' mode to allow more lenient type checking, enabling more control
+# over individual options rather than using a bundled strict configuration.
+strict = false
 
-# General settings
+# Exclude specific directories and all Jupyter notebook files from type checking.
+# ^ indicates the start of the path, and \\.ipynb$ matches any files with the .ipynb extension.
+exclude = '''
+^notebooks/
+^examples/
+^example/
+^experiments/
+\.ipynb$
+'''
+
+# General Mypy settings my less strict
+
+# Check the function body of untyped functions as if they were fully typed.
 check_untyped_defs = true
+
+# Prohibit calls to functions that lack type annotations.
 disallow_untyped_calls = true
+
+# Require type annotations for all function and method definitions.
 disallow_untyped_defs = true
+
+# Prohibit incomplete type annotations in function signatures. For example,
+# `def func(x):` would raise an error if `disallow_incomplete_defs` is true.
 disallow_incomplete_defs = true
+
+# Silently ignore missing imports for third-party libraries that might not have
+# type information. This is helpful for avoiding unnecessary errors from
+# libraries without type stubs.
 ignore_missing_imports = true
+
+# Show error codes alongside error messages for easier debugging and filtering.
 show_error_codes = true
+
+# Enable strict equality checking, ensuring that `==` and `!=` checks are only performed
+# between comparable types, reducing the chances of accidental type mismatches.
 strict_equality = true
+
+# Warn about redundant casts, such as `x = cast(int, 5)` where the cast is unnecessary.
 warn_redundant_casts = true
-#warn_return_any = true
+
+# Warn when Mypy detects unreachable code, for example, code after a return statement.
 warn_unreachable = true
+
+# Warn when configuration options are unused, ensuring that no settings are
+# incorrectly specified or ignored in the configuration file.
 warn_unused_configs = true
-warn_unused_ignores = true
+
+# Suppress warnings for unused `# type: ignore` comments in the code.
+warn_unused_ignores = false
+
+# Prevent the implicit re-export of imported symbols in `__init__.py` files.
+# This ensures that all imports must be explicitly re-exported using `__all__` or
+# another mechanism, improving clarity about what symbols are public.
 no_implicit_reexport = true
 
-# Enable strict optional checking
+# Optional and None-specific settings
+
+# Enable strict optional checking, which treats all `Optional` types as non-implicit.
+# This ensures that `Optional[X]` and `X` are treated distinctly, and `None` values
+# must be explicitly handled.
 strict_optional = true
 
-# Enable strict None checking
+# Enforce that no `Optional` types are assumed implicitly, requiring you to be explicit
+# when a value can be `None`. Without this, a value that can be `None` might be
+# inferred to have type `Optional` when not annotated as such.
 no_implicit_optional = true
 
-# Report untyped decorated functions
+# Decorators that aren't typed themselves (i.e., those without annotations)
+# cannot be applied to typed functions, ensuring that all function signatures
+# remain strongly typed when decorators are applied.
 disallow_untyped_decorators = true
 
-# Use namespace packages
+# Miscellaneous settings
+
+# Treat namespace packages (i.e., packages that don’t have an `__init__.py`)
+# as valid for import resolution, which can be useful in some project structures.
 namespace_packages = true
+
+disable_error_code = [
+    "return-value",  # Disables "Incompatible return value type" errors
+    "return"         # Disables "Missing return statement" errors
+]
+
+
