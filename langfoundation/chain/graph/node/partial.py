@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Callable, Union
+from typing import Any, Callable, Union
 
 from pydantic import BaseModel
 
@@ -25,7 +25,7 @@ class Partial(BaseModel):
 
     def __init__(
         self,
-        **kwargs: Union[str, int, float, bool, Callable[[], str]],
+        **kwargs: Union[str, Callable[[], str], Any],
     ):
         super().__init__(**kwargs)
 
