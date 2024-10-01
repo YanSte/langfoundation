@@ -276,7 +276,7 @@ class BaseNodeChain(
         """
         Prompt template and input data.
         """
-        input_data = input.prompt_arg(None).model_dump()
+        input_data = input.prompt_arg(None).model_dump(exclude_none=True)
         prompt_template = input.prompt_template
 
         if self.with_output_format:

@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-from typing import Any, Callable, Union
+from typing import Callable, Union
 
-from pydantic import BaseModel, Extra
+from pydantic import BaseModel
 
 
 class Partial(BaseModel):
@@ -25,10 +25,21 @@ class Partial(BaseModel):
 
     def __init__(
         self,
-        **kwargs: Union[str, Callable[[], str], Any],
+        **kwargs: Union[str, int, float, bool, Callable[[], str]],
     ):
         super().__init__(**kwargs)
 
+    def get_value(self) -> dict:
+        result = {}
+        for key, value in self.__dict__.items():
+            if callable(value):
+                value = value()
+
+            if value is not None:
+                result[key] = str(value)
+
+        return result
+
     class Config:
         arbitrary_types_allowed = True
-        extra = Extra.allow
+        extra = "allow"
