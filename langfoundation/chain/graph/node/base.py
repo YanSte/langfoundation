@@ -12,7 +12,7 @@ from langchain_core.prompts.base import BasePromptTemplate
 from langchain_core.prompts.chat import SystemMessagePromptTemplate
 from langchain_core.runnables import RunnableConfig, RunnableLambda, RunnableSerializable
 from pydantic import BaseModel, Field
-
+from langchain_core.prompts.chat import HumanMessagePromptTemplate
 from langfoundation.callback.base.tags import Tags
 from langfoundation.chain.graph.node.input import BaseInput
 from langfoundation.chain.pydantic.chain import BasePydanticChain
@@ -289,7 +289,12 @@ class BaseNodeChain(
                 # Add the output format instructions to the input data
                 input_data["output_format"] = output_format
 
-            prompt_template = input.prompt_template + SystemMessagePromptTemplate.from_template("\n\n{output_format}")
+            prompt_template = prompt_template + SystemMessagePromptTemplate.from_template("\n\n{output_format}")
+
+        # In case of not Humain
+        has_human_prompt = any(isinstance(msg, HumanMessagePromptTemplate) for msg in prompt_template.messages)
+        if not has_human_prompt:
+            prompt_template = prompt_template + HumanMessagePromptTemplate.from_template("\n\n")
 
         return (prompt_template, input_data)
 
@@ -303,7 +308,7 @@ class BaseNodeChain(
         """
         Returns the retry prompt template and input data.
         """
-        input_data = input.prompt_arg(previous_errors).dict()
+        input_data = input.prompt_arg(previous_errors).model_dump(exclude_none=True)
 
         if has_method_implementation(
             BaseOutputParser.get_format_instructions.__name__,
@@ -313,7 +318,14 @@ class BaseNodeChain(
             output_format = parser.get_format_instructions()
             input_data["output_format"] = output_format
 
-        return (input.retry_prompt_template, input_data)
+        retry_prompt_template = input.retry_prompt_template
+
+        # In case of not Humain
+        has_human_prompt = any(isinstance(msg, HumanMessagePromptTemplate) for msg in retry_prompt_template.messages)
+        if not has_human_prompt:
+            retry_prompt_template = retry_prompt_template + HumanMessagePromptTemplate.from_template("\n\n")
+
+        return (retry_prompt_template, input_data)
 
     def _parser(
         self,
