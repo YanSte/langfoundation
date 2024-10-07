@@ -8,7 +8,7 @@ in-project = true
 
 [tool.poetry]
 name = "langfoundation"
-version = "1.3.1"
+version = "1.3.2"
 description = "langfoundation"
 authors = ["Yannick Stephan <stephan.yannick@me.com>"]
 readme = "README.md"
@@ -209,5 +209,3 @@ disable_error_code = [
     "return-value",  # Disables "Incompatible return value type" errors
     "return"         # Disables "Missing return statement" errors
 ]
-
-

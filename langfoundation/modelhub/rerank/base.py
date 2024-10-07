@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from typing import List, Tuple
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 
 class BaseRerankModel(BaseModel, ABC):
@@ -11,21 +11,20 @@ class BaseRerankModel(BaseModel, ABC):
     Cross encoders are models that take in a query and a list of documents, and output a score for each document in the list.
     """
 
-    top_n: int = Field(
-        description="The number of top results to return from the reranker.",
-    )
-
     @abstractmethod
     def rerank(
         self,
         query: str,
         docs: List[str],
+        top_n: int,
     ) -> List[Tuple[int, float]]:
-        """Score pairs' similarity.
+        """
+        Score pairs' similarity.
 
         Args:
             query: The query string.
             docs: The list of document strings.
+            top_n: The number of top results to return from the reranker.
 
         Returns:
             A list of tuples of index of the document in the `docs` list and the similarity score.
@@ -37,12 +36,15 @@ class BaseRerankModel(BaseModel, ABC):
         self,
         query: str,
         docs: List[str],
+        top_n: int,
     ) -> List[Tuple[int, float]]:
-        """Score pairs' similarity.
+        """
+        Score pairs' similarity.
 
         Args:
             query: The query string.
             docs: The list of document strings.
+            top_n: The number of top results to return from the reranker.
 
         Returns:
             A list of tuples of index of the document in the `docs` list and the similarity score.
