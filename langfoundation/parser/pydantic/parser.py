@@ -31,7 +31,9 @@ class PydanticOutputParser(BaseTransformOutputParser[Output]):
     - Parser accepte only Json not with '' (example: 'Key': 'Value')
     """
 
-    pydantic_object: Type[Output] = Field(description="The type of the pydantic object that will be used to parse the output.")
+    pydantic_object: Type[Output] = Field(
+        description="The type of the pydantic object that will be used to parse the output.",
+    )
     name: str = Field(
         default="PydanticOutputParser",
         description="The name of the parser.",

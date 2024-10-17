@@ -10,16 +10,23 @@ from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.output_parsers.base import BaseOutputParser
 from langchain_core.prompts.base import BasePromptTemplate
 from langchain_core.prompts.chat import SystemMessagePromptTemplate
-from langchain_core.runnables import RunnableConfig, RunnableLambda, RunnableSerializable
+from langchain_core.runnables import (
+    RunnableConfig,
+    RunnableLambda,
+    RunnableSerializable,
+)
 from pydantic import BaseModel, Field
 from langchain_core.prompts.chat import HumanMessagePromptTemplate
 from langfoundation.callback.base.tags import Tags
 from langfoundation.chain.graph.node.input import BaseInput
+from langfoundation.chain.graph.node.template import BASE_EMTPY_MSG_HUMAIM_PROMPT_TEMPLATE
 from langfoundation.chain.pydantic.chain import BasePydanticChain
 from langfoundation.errors.max_retry import MaxRetryError
-from langfoundation.modelhub.chat.config import ChatModelConfig
+from langfoundation.modelhub.chat.config import ChatModelConfiguration
+from langfoundation.modelhub.chat.params import ChatModelParams
 from langfoundation.parser.pydantic.parser import PydanticOutputParser
 from langfoundation.utils.py.py_class import has_method_implementation
+from langchain_core.messages import HumanMessage
 
 logger = logging.getLogger(__name__)
 
@@ -51,18 +58,13 @@ class BaseNodeChain(
     # Model
     # ---
 
-    llm_config: ChatModelConfig = Field(
+    model_configuration: ChatModelConfiguration = Field(
+        description="The model configuration to be used for invocation.",
+    )
+    model_parameters: ChatModelParams = Field(
         description=" Specifies the size of the model to be used for invocation.",
     )
-
-    # Fallback
-    # ---
-
-    fallback_max_retries: int = Field(
-        description="Maximum of retries allowed for the fallback.",
-    )
-
-    fallback_llm_config: ChatModelConfig = Field(
+    model_fallback_parameters: ChatModelParams = Field(
         description="The model size to be used for fallback.",
     )
 
@@ -89,6 +91,10 @@ class BaseNodeChain(
         """
         Whether or not to add the output format in the prompt.
         """
+        return True
+
+    @property
+    def with_think_step_by_step(self) -> bool:
         return True
 
     # Prompt
@@ -233,7 +239,7 @@ class BaseNodeChain(
         """
         Returns the output parser.
         """
-        llm = self.llm_config.model
+        llm = self.model_configuration.get_model(self.model_parameters)
 
         if hasattr(llm, "streaming"):
             llm.streaming = self.is_display  # type: ignore
@@ -249,7 +255,7 @@ class BaseNodeChain(
         """
         Returns the output parser.
         """
-        llm = self.fallback_llm_config.model
+        llm = self.model_configuration.get_model(self.model_fallback_parameters)
 
         if hasattr(llm, "streaming"):
             llm.streaming = self.is_display  # type: ignore
@@ -257,13 +263,13 @@ class BaseNodeChain(
         # We assum if not display, then it is not streaming
         llm.disable_streaming = not self.is_display
 
-        logger.info(
-            {"Model Config:": llm._identifying_params},
-            extra={
-                "title": "[Invoke] " + " : " + self._chain_type,
-                "verbose": True,
-            },
-        )
+        if self.verbose:
+            logger.info(
+                {"Model Config:": llm._identifying_params},
+                extra={
+                    "title": "[Invoke] " + " : " + self._chain_type,
+                },
+            )
         return llm
 
     def _prompt(
@@ -291,10 +297,13 @@ class BaseNodeChain(
 
             prompt_template = prompt_template + SystemMessagePromptTemplate.from_template("\n\n{output_format}")
 
-        # In case of not Humain
-        has_human_prompt = any(isinstance(msg, HumanMessagePromptTemplate) for msg in prompt_template.messages)
-        if not has_human_prompt:
-            prompt_template = prompt_template + HumanMessagePromptTemplate.from_template("\n\n")
+        if self.with_think_step_by_step:
+            prompt_template = prompt_template + input.step_by_step_prompt_template
+
+        # In case of not HumanMessage at the end to use SystemMessagePromptTemplate
+        # and to not block llm call.
+        if not isinstance(prompt_template.messages[-1], (HumanMessagePromptTemplate, HumanMessage)):
+            prompt_template = prompt_template + BASE_EMTPY_MSG_HUMAIM_PROMPT_TEMPLATE
 
         return (prompt_template, input_data)
 
@@ -318,14 +327,17 @@ class BaseNodeChain(
             output_format = parser.get_format_instructions()
             input_data["output_format"] = output_format
 
-        retry_prompt_template = input.retry_prompt_template
+        prompt_template = input.retry_prompt_template
 
-        # In case of not Humain
-        has_human_prompt = any(isinstance(msg, HumanMessagePromptTemplate) for msg in retry_prompt_template.messages)
-        if not has_human_prompt:
-            retry_prompt_template = retry_prompt_template + HumanMessagePromptTemplate.from_template("\n\n")
+        if self.with_think_step_by_step:
+            prompt_template = prompt_template + input.step_by_step_prompt_template
 
-        return (retry_prompt_template, input_data)
+        # In case of not HumanMessage at the end to use SystemMessagePromptTemplate
+        # and to not block llm call.
+        if not isinstance(prompt_template.messages[-1], (HumanMessagePromptTemplate, HumanMessage)):
+            prompt_template = prompt_template + BASE_EMTPY_MSG_HUMAIM_PROMPT_TEMPLATE
+
+        return (prompt_template, input_data)
 
     def _parser(
         self,
@@ -350,39 +362,33 @@ class BaseNodeChain(
         """
         chain: RunnableSerializable
 
-        if not self.is_display and self.llm_config.has_structured_output:
+        if not self.is_display and self.model_configuration.has_structured_output:
             # If not display (streaming) use func calling (func calling can't streaming output)
             chain = prompt | llm.with_structured_output(
                 schema=parser.OutputType,
             )
-            logger.info(
-                "Use Function Calling",
-                extra={
-                    "title": "[Invoke] " + " : " + self._chain_type,
-                    "verbose": self.verbose,
-                },
-            )
-        elif self.is_display and self.llm_config.has_json_mode:
+            if self.verbose:
+                logger.info(
+                    "Use Function Calling",
+                    extra={"title": "[Invoke] " + " : " + self._chain_type},
+                )
+        elif self.is_display and self.model_configuration.has_json_mode:
             # If display (streaming) use json mode (json mode give streaming output)
             chain = prompt | llm.with_structured_output(
                 schema=parser.OutputType,
                 method="json_mode",
             )
-            logger.info(
-                "Use Json Mode",
-                extra={
-                    "title": "[Invoke] " + " : " + self._chain_type,
-                    "verbose": self.verbose,
-                },
-            )
+            if self.verbose:
+                logger.info(
+                    "Use Json Mode",
+                    extra={"title": "[Invoke] " + " : " + self._chain_type},
+                )
         else:
-            logger.info(
-                "Use without stuctured output",
-                extra={
-                    "title": "[Invoke] " + " : " + self._chain_type,
-                    "verbose": self.verbose,
-                },
-            )
+            if self.verbose:
+                logger.info(
+                    "Use without stuctured output",
+                    extra={"title": "[Invoke] " + " : " + self._chain_type},
+                )
             chain = prompt | llm | parser
 
         if has_method_implementation(

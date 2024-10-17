@@ -1,15 +1,16 @@
-from abc import ABC
 import logging
-from typing import Any, Dict, Optional
+from typing import Type
 
 from langchain_core.language_models.chat_models import BaseChatModel
 from pydantic import BaseModel, Field
+
+from langfoundation.modelhub.chat.params import ChatModelParams
 
 
 logger = logging.getLogger(__name__)
 
 
-class ChatModelConfig(BaseModel, ABC):
+class ChatModelConfiguration(BaseModel):
     """
     Configuration for the chat model.
 
@@ -24,8 +25,11 @@ class ChatModelConfig(BaseModel, ABC):
     [See here](https://www.promptingguide.ai/models/chatgpt.en#conversations-with-chatgpt)
     """
 
-    model: BaseChatModel = Field(
+    model: Type[BaseChatModel] = Field(
         description="The provider for the chat model.",
+    )
+    model_name: str = Field(
+        description="The name of the model.",
     )
     has_structured_output: bool = Field(
         default=True,
@@ -35,4 +39,20 @@ class ChatModelConfig(BaseModel, ABC):
         default=True,
         description="Whether the provider supports json mode.",
     )
-    extra: Optional[Dict[str, Any]] = None
+
+    def get_model(
+        self,
+        params: ChatModelParams,
+    ) -> BaseChatModel:
+        model_cls = self.model
+        try:
+            return model_cls(
+                model_name=self.model_name,  # type: ignore
+                **params.model_dump(),  # type: ignore
+            )
+        except Exception as e:
+            logger.error(
+                f"Failed to create model: {e}",
+                stack_info=True,
+            )
+            raise

@@ -204,24 +204,20 @@ class BasePydanticGraphChain(
             self._validate_input_state_output_type()
             input = self._convert_input_model_to_dict(input)
 
-            logger.info(
-                input,
-                extra={
-                    "title": "[Start] Invoke" + " : " + self._chain_type,
-                    "verbose": self.verbose,
-                },
-            )
+            if self.verbose:
+                logger.info(
+                    input,
+                    extra={"title": "[Start] Invoke" + " : " + self._chain_type},
+                )
 
             output = await super().ainvoke(input=input, config=config, kwargs=kwargs)
             output_model = self.OutputModelType(**output)
 
-            logger.info(
-                output,
-                extra={
-                    "title": "[End] Invoke" + " : " + self._chain_type,
-                    "verbose": self.verbose,
-                },
-            )
+            if self.verbose:
+                logger.info(
+                    output,
+                    extra={"title": "[End] Invoke" + " : " + self._chain_type},
+                )
             return output_model
 
         except PydanticChainError as e:
@@ -251,25 +247,20 @@ class BasePydanticGraphChain(
         try:
             self._validate_input_state_output_type()
             input = self._convert_input_model_to_dict(input)
-
-            logger.info(
-                input,
-                extra={
-                    "title": "[Start] Invoke" + " : " + self._chain_type,
-                    "verbose": self.verbose,
-                },
-            )
+            if self.verbose:
+                logger.info(
+                    input,
+                    extra={"title": "[Start] Invoke" + " : " + self._chain_type},
+                )
 
             output = super().invoke(input=input, config=config, kwargs=kwargs)
             output_model = self.OutputModelType(**output)
 
-            logger.info(
-                output,
-                extra={
-                    "title": "[End] Invoke" + " : " + self._chain_type,
-                    "verbose": self.verbose,
-                },
-            )
+            if self.verbose:
+                logger.info(
+                    output,
+                    extra={"title": "[End] Invoke" + " : " + self._chain_type},
+                )
             return output_model
 
         except PydanticChainError as e:
@@ -300,23 +291,19 @@ class BasePydanticGraphChain(
             self._validate_input_state_output_type()
             input = self._convert_input_model_to_dict(input)
 
-            logger.info(
-                input,
-                extra={
-                    "title": "[Start] Invoke" + " : " + self._chain_type,
-                    "verbose": self.verbose,
-                },
-            )
+            if self.verbose:
+                logger.info(
+                    input,
+                    extra={"title": "[Start] Invoke" + " : " + self._chain_type},
+                )
 
             output = await super().ainvoke(input, config, **kwargs)
 
-            logger.info(
-                output,
-                extra={
-                    "title": "[End] Invoke" + " : " + self._chain_type,
-                    "verbose": self.verbose,
-                },
-            )
+            if self.verbose:
+                logger.info(
+                    output,
+                    extra={"title": "[End] Invoke" + " : " + self._chain_type},
+                )
             return output
 
         except PydanticChainError as e:
@@ -347,23 +334,19 @@ class BasePydanticGraphChain(
             self._validate_input_state_output_type()
             input = self._convert_input_model_to_dict(input)
 
-            logger.info(
-                input,
-                extra={
-                    "title": "[Start] Invoke" + " : " + self._chain_type,
-                    "verbose": self.verbose,
-                },
-            )
+            if self.verbose:
+                logger.info(
+                    input,
+                    extra={"title": "[Start] Invoke" + " : " + self._chain_type},
+                )
 
             output = super().invoke(input, config, **kwargs)
 
-            logger.info(
-                output,
-                extra={
-                    "title": "[End] Invoke" + " : " + self._chain_type,
-                    "verbose": self.verbose,
-                },
-            )
+            if self.verbose:
+                logger.info(
+                    output,
+                    extra={"title": "[End] Invoke" + " : " + self._chain_type},
+                )
             return output
 
         except PydanticChainError as e:
@@ -540,11 +523,13 @@ class BasePydanticGraphChain(
 
             if missing_properties:
                 custom_message += "Required all properties from Input in State:\n"
-                custom_message += f"- {'\n- '.join(missing_properties)}\n"
+                msg = "\n- ".join(missing_properties)
+                custom_message += f"- {msg}\n"
 
             if incorrect_type_properties:
                 custom_message += "Required properties to be same type from Input in State:\n"
-                custom_message += f"- {'\n- '.join(incorrect_type_properties)}\n"
+                msg = "\n- ".join(incorrect_type_properties)
+                custom_message += f"- {msg}\n"
 
             e = ValidationError.from_exception_data(f"{state_model.__name__}", line_errors)
 
@@ -617,11 +602,13 @@ class BasePydanticGraphChain(
 
             if missing_properties:
                 custom_message += "Required all properties from Output in State:\n"
-                custom_message += f"- {'\n- '.join(missing_properties)}\n"
+                msg = "\n- ".join(missing_properties)
+                custom_message += f"- {msg}\n"
 
             if non_optional_properties:
                 custom_message += "Required properties from Output in State to be type Optional with default value `None` or type Non-Optional with default value:\n"  # noqa
-                custom_message += f"- {'\n- '.join(non_optional_properties)}\n"
+                msg = "\n- ".join(non_optional_properties)
+                custom_message += f"- {msg}\n"
 
             error = PydanticChainError(
                 origin=output_model.__name__,
@@ -674,7 +661,8 @@ class BasePydanticGraphChain(
             )
             custom_message = f"Please have a look at `{state_model.__name__}`, Model State is not valid.\n"
             custom_message += "Required other properties (Not from Input and Output) in State to be type Optional with default `None` or type Non-Optional with default value:\n"  # noqa
-            custom_message += f"- {'\n- '.join(invalid_properties)}\n"
+            msg = "\n- ".join(invalid_properties)
+            custom_message += f"- {msg}\n"
 
             error = PydanticChainError(
                 origin=state_model.__name__,

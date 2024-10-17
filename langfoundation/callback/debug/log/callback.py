@@ -8,7 +8,6 @@ from langchain_core.callbacks import AsyncCallbackHandler
 from langchain_core.documents import Document
 from langchain_core.messages import BaseMessage
 from langchain_core.outputs import LLMResult
-from langfoundation.utils.debug.formatter import Formatter
 
 from langfoundation.callback.debug.log.type import AsyncLogHandlerType
 
@@ -17,25 +16,19 @@ logger = logging.getLogger(None)
 
 
 class AsyncLogEventHandler(AsyncCallbackHandler):
-    """A class to handle events and log them."""
-
-    _pretty = Formatter()
     _separator: str
-    _semi_separator: str
     _included_log: Set[AsyncLogHandlerType]
     _included_kwarg: bool
 
     def __init__(
         self,
         included_log: Set[AsyncLogHandlerType] = set(),
-        included_kwarg: bool = True,
-        separator: str = "- - - " * 20,
-        semi_separator: str = "-" * 10,
+        included_kwarg: bool = False,
+        separator: str = "---" * 5,
     ):
         self._included_log = included_log
         self._separator = separator
         self._included_kwarg = included_kwarg
-        self._semi_separator = semi_separator
 
     # Chain
     # ----
@@ -53,7 +46,7 @@ class AsyncLogEventHandler(AsyncCallbackHandler):
 
         representation = ""
         for message_list in messages:
-            message_reprs = [f"{msg.type.title()}: {msg.content}" for msg in message_list]
+            message_reprs = [f"{self._separator} {msg.type.title()} {self._separator}\n{msg.content}" for msg in message_list]
             representation += "\n".join(message_reprs)
 
         self._log_message(
@@ -199,7 +192,8 @@ class AsyncLogEventHandler(AsyncCallbackHandler):
     ) -> None:
         if isinstance(data, Exception):
             logger.error(
-                [data, kwargs],
+                [data, kwargs] if self._included_kwarg else data,
+                stack_info=True,
                 extra={
                     "title": "[ERROR] " + title + " : " + subtitle,
                 },
@@ -207,7 +201,7 @@ class AsyncLogEventHandler(AsyncCallbackHandler):
 
         else:
             logger.info(
-                [data, kwargs],
+                [data, kwargs] if self._included_kwarg else data,
                 extra={
                     "title": title + " : " + subtitle,
                     "verbose": True,

@@ -73,8 +73,9 @@ class BasePydanticChain(
         default=__name__,
     )
 
-    fallback_max_retries: Optional[int] = Field(
+    max_retries: Optional[int] = Field(
         description="Maximum of retries allowed for the fallback.",
+        default=3,
     )
 
     # Input / Output
@@ -188,27 +189,23 @@ class BasePydanticChain(
             The output of the chain as a pydantic model.
         """
         try:
+            if self.verbose:
+                logger.info(
+                    input,
+                    extra={"title": "[Start] Invoke" + " : " + self._chain_type},
+                )
             input = self._convert_input_model_to_dict(input)
 
-            logger.info(
-                input,
-                extra={
-                    "title": "[Start] Invoke" + " : " + self._chain_type,
-                    "verbose": self.verbose,
-                },
-            )
+            result = await super().ainvoke(input=input, config=config, kwargs=kwargs)
 
-            output = await super().ainvoke(input=input, config=config, kwargs=kwargs)
+            output = self.OutputModelType(**result)
 
-            logger.info(
-                output,
-                extra={
-                    "title": "[End] Invoke" + " : " + self._chain_type,
-                    "verbose": self.verbose,
-                },
-            )
-
-            return self.OutputModelType(**output)
+            if self.verbose:
+                logger.info(
+                    output,
+                    extra={"title": "[End] Invoke" + " : " + self._chain_type},
+                )
+            return output
 
         except PydanticChainError as e:
             logger.error(
@@ -239,27 +236,25 @@ class BasePydanticChain(
         Returns the output of the chain as a pydantic model.
         """
         try:
+            if self.verbose:
+                logger.info(
+                    input,
+                    extra={"title": "[Start] Invoke" + " : " + self._chain_type},
+                )
+
             input = self._convert_input_model_to_dict(input)
 
-            logger.info(
-                input,
-                extra={
-                    "title": "[Start] Invoke" + " : " + self._chain_type,
-                    "verbose": self.verbose,
-                },
-            )
+            result = super().invoke(input=input, config=config, kwargs=kwargs)
 
-            output = super().invoke(input=input, config=config, kwargs=kwargs)
+            output = self.OutputModelType(**result)
 
-            logger.info(
-                output,
-                extra={
-                    "title": "[End] Invoke" + " : " + self._chain_type,
-                    "verbose": self.verbose,
-                },
-            )
+            if self.verbose:
+                logger.info(
+                    output,
+                    extra={"title": "[End] Invoke" + " : " + self._chain_type},
+                )
 
-            return self.OutputModelType(**output)
+            return output
 
         except PydanticChainError as e:
             logger.error(
@@ -290,25 +285,22 @@ class BasePydanticChain(
         Returns the output of the chain as a dictionary.
         """
         try:
-            logger.info(
-                input,
-                extra={
-                    "title": "[Start] Invoke" + " : " + self._chain_type,
-                    "verbose": self.verbose,
-                },
-            )
+            if self.verbose:
+                logger.info(
+                    input,
+                    extra={"title": "[Start] Invoke" + " : " + self._chain_type},
+                )
 
             output = await super().ainvoke(input, config, **kwargs)
 
-            logger.info(
-                output,
-                extra={
-                    "title": "[End] Invoke" + " : " + self._chain_type,
-                    "verbose": self.verbose,
-                },
-            )
+            if self.verbose:
+                logger.info(
+                    output,
+                    extra={"title": "[End] Invoke" + " : " + self._chain_type},
+                )
 
             return output
+
         except PydanticChainError as e:
             logger.error(
                 e,
@@ -338,24 +330,21 @@ class BasePydanticChain(
         Returns the output of the chain as a dictionary.
         """
         try:
-            logger.info(
-                input,
-                extra={
-                    "title": "[Start] Invoke" + " : " + self._chain_type,
-                    "verbose": self.verbose,
-                },
-            )
+            if self.verbose:
+                logger.info(
+                    input,
+                    extra={"title": "[Start] Invoke" + " : " + self._chain_type},
+                )
 
             output = super().invoke(input, config, **kwargs)
 
-            logger.info(
-                output,
-                extra={
-                    "title": "[End] Invoke" + " : " + self._chain_type,
-                    "verbose": self.verbose,
-                },
-            )
+            if self.verbose:
+                logger.info(
+                    output,
+                    extra={"title": "[End] Invoke" + " : " + self._chain_type},
+                )
             return output
+
         except PydanticChainError as e:
             logger.error(
                 e,
@@ -405,11 +394,11 @@ class BasePydanticChain(
             return self._convert_output_model_to_dict(ouput_model)
 
         except Exception as origin_error:
-            if self.fallback_max_retries:
+            if self.max_retries:
                 # Retry the fallback with the input model until it reaches the maximum number of retries
                 retries = 0
                 retry_errors: List[Exception] = [origin_error]
-                while retries < self.fallback_max_retries:
+                while retries < self.max_retries:
                     try:
                         ouput_model = await self.afallback(
                             input_model,
@@ -464,10 +453,10 @@ class BasePydanticChain(
             return self._convert_output_model_to_dict(ouput_model)
 
         except Exception as origin_error:
-            if self.fallback_max_retries:
+            if self.max_retries:
                 retries = 0
                 retry_errors: List[Exception] = [origin_error]
-                while retries < self.fallback_max_retries:
+                while retries < self.max_retries:
                     try:
                         ouput_model = self.fallback(
                             input_model,

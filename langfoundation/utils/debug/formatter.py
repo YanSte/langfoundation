@@ -71,6 +71,6 @@ class Formatter:
             return self._format_object(value, indent)
 
     def _format_base_model(self, value: BaseModel, indent: int) -> str:
-        _dict = self._format_dict(dict(value), indent)
-        _dict = value.__class__.__name__ + _dict.replace('"', "").replace(":", "=").replace("{", "(").replace("}", ")")
+        _dict = self._format_dict(value.model_dump(), indent)
+        _dict = value.__class__.__name__ + _dict.replace(":", "=").replace("{", "(").replace("}", ")")
         return _dict

@@ -30,7 +30,7 @@ def test_chain() -> TestChain:
 
     This fixture is used in tests requiring a full TestChain instance.
     """
-    return TestChain(fallback_max_retries=0)
+    return TestChain(max_retries=0)
 
 
 def test_chain_type(test_chain: TestChain) -> None:

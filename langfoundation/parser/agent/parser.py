@@ -22,11 +22,16 @@ class AgentOutputParser(LangchainAgentOutputParser):
     return_values_key = "output"
     verbose: bool = False
 
+    @property
+    def _type(self) -> str:
+        return __class__.__name__
+
     def parse(self, text: str) -> Union[AgentAction, AgentFinish]:
-        logger.info(
-            text,
-            extra={"title": "[Parse] Start" + " : " + self.__class__.__name__, "verbose": self.verbose},
-        )
+        if self.verbose:
+            logger.info(
+                text,
+                extra={"title": "[Parse] Start" + " : " + self.__class__.__name__},
+            )
 
         try:
             text = text.strip()
@@ -36,11 +41,11 @@ class AgentOutputParser(LangchainAgentOutputParser):
 
             json_object = parse_json_markdown(text)
             state = self.pydantic_object(**json_object)
-
-            logger.info(
-                state,
-                extra={"title": "[Parse] Parsed Json" + " : " + self.__class__.__name__, "verbose": self.verbose},
-            )
+            if self.verbose:
+                logger.info(
+                    state,
+                    extra={"title": "[Parse] Parsed Json" + " : " + self.__class__.__name__},
+                )
 
             if not state.action:
                 return AgentFinish(
@@ -58,10 +63,11 @@ class AgentOutputParser(LangchainAgentOutputParser):
             raise OutputParserException(f"Could not parse LLM output: {text} error:{e}")
 
     def display_parse(self, text: str) -> Optional[str]:
-        logger.info(
-            text,
-            extra={"title": "[Display] text" + " : " + self.__class__.__name__, "verbose": self.verbose},
-        )
+        if self.verbose:
+            logger.info(
+                text,
+                extra={"title": "[Display] text" + " : " + self.__class__.__name__},
+            )
 
         try:
             agent_state = self.parse(text)
@@ -74,8 +80,3 @@ class AgentOutputParser(LangchainAgentOutputParser):
 
         except Exception:
             return None
-
-    @property
-    def _type(self) -> str:
-        return __class__.__name__
-        return __class__.__name__

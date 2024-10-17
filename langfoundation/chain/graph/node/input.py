@@ -6,6 +6,8 @@ from typing import List, Optional
 from langchain_core.prompts.chat import ChatPromptTemplate
 from langfoundation.chain.graph.node.partial import Partial
 from pydantic import BaseModel
+from langchain_core.prompts.chat import BaseMessagePromptTemplate
+from langfoundation.chain.graph.node.template import BASE_THINK_STEP_BY_STEP_HUMAIM_PROMPT_TEMPLATE
 
 
 class BaseInput(BaseModel, ABC):
@@ -41,6 +43,10 @@ class BaseInput(BaseModel, ABC):
 
         - `errors`: When a retry, the `errors` parameter should contain the list of errors that have occurred.
         """
+
+    @property
+    def step_by_step_prompt_template(self) -> BaseMessagePromptTemplate:
+        return BASE_THINK_STEP_BY_STEP_HUMAIM_PROMPT_TEMPLATE
 
     class Config:
         arbitrary_types_allowed = True
