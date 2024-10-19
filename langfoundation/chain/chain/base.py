@@ -1,10 +1,9 @@
 from __future__ import annotations
 
-from abc import ABC, abstractmethod
 import logging
+from abc import ABC, abstractmethod
 from typing import (
     Any,
-    cast,
     Dict,
     Generic,
     List,
@@ -12,6 +11,7 @@ from typing import (
     Type,
     TypeVar,
     Union,
+    cast,
 )
 
 from langchain.chains.base import Chain as LCBaseChain
@@ -20,6 +20,7 @@ from langchain_core.callbacks import (
     CallbackManagerForChainRun,
 )
 from langchain_core.runnables import RunnableConfig
+from pydantic import BaseModel, Field
 
 from langfoundation.errors.chain import ChainError
 from langfoundation.errors.max_retry import MaxRetryError
@@ -27,8 +28,6 @@ from langfoundation.utils.pydantic.base_model import (
     get_type_base_generic,
     required_fields,
 )
-from pydantic import BaseModel, Field
-
 
 logger = logging.getLogger(__name__)
 
@@ -148,16 +147,12 @@ class BaseChain(
 
         This asynchronous method is designed to handle any fallback operations in the event of an error during the call.
         """
-        raise NotImplementedError(
-            "Not implemented, `fallback_max_retries` with True but `afallback` is not implemented."
-        )
+        raise NotImplementedError("Not implemented, `fallback_max_retries` with True but `afallback` is not implemented.")
 
     # Sync
     # ---
 
-    def call(
-        self, input: Input, run_manager: Optional[CallbackManagerForChainRun]
-    ) -> Output:
+    def call(self, input: Input, run_manager: Optional[CallbackManagerForChainRun]) -> Output:
         """
         Abstract method that must be implemented by subclasses.
 
@@ -176,9 +171,7 @@ class BaseChain(
 
         This method is designed to handle any fallback operations in the event of an error during the call.
         """
-        raise NotImplementedError(
-            "Not implemented, `fallback_max_retries` with True but `fallback` is not implemented."
-        )
+        raise NotImplementedError("Not implemented, `fallback_max_retries` with True but `fallback` is not implemented.")
 
     # Invoke
     # ---
@@ -418,9 +411,7 @@ class BaseChain(
                         retries += 1
                         logger.warning(
                             retry_errors,
-                            extra={
-                                "title": "[RETRY] _acall" + " : " + self._chain_type
-                            },
+                            extra={"title": "[RETRY] _acall" + " : " + self._chain_type},
                         )
 
             # If the fallback failed, raise a ChainError
@@ -478,9 +469,7 @@ class BaseChain(
                         retries += 1
                         logger.warning(
                             retry_errors,
-                            extra={
-                                "title": "[RETRY] _acall" + " : " + self._chain_type
-                            },
+                            extra={"title": "[RETRY] _acall" + " : " + self._chain_type},
                         )
 
             chain_error: ChainError
@@ -505,9 +494,7 @@ class BaseChain(
     # Private Convert
     # ---
 
-    def _convert_input_model_to_dict(
-        self, input: Union[Input, Dict[str, Any], BaseModel]
-    ) -> Dict[str, Any]:
+    def _convert_input_model_to_dict(self, input: Union[Input, Dict[str, Any], BaseModel]) -> Dict[str, Any]:
         if isinstance(input, BaseModel):
             return input.model_dump()
 
@@ -515,7 +502,5 @@ class BaseChain(
 
     def _convert_output_model_to_dict(self, output: Output) -> Dict[str, Any]:
         if not isinstance(output, self.OutputModelType):
-            raise TypeError(
-                f"Error Output not typeof {self.OutputModelType}, Got: {type(output)}"
-            )
+            raise TypeError(f"Error Output not typeof {self.OutputModelType}, Got: {type(output)}")
         return output.model_dump()

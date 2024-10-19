@@ -11,6 +11,10 @@ class ChatModelParams(BaseModel):
     Configuration for the chat model.
     """
 
+    def __hash__(self) -> int:
+        # implement the hash logic here
+        return hash((self.temperature, self.top_p, self.max_tokens))
+
     temperature: float = Field(
         default=0.7,
         description="The temperature to use when generating text.",

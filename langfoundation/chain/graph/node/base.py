@@ -10,7 +10,10 @@ from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.messages import HumanMessage
 from langchain_core.output_parsers.base import BaseOutputParser
 from langchain_core.prompts.base import BasePromptTemplate
-from langchain_core.prompts.chat import HumanMessagePromptTemplate, SystemMessagePromptTemplate
+from langchain_core.prompts.chat import (
+    HumanMessagePromptTemplate,
+    SystemMessagePromptTemplate,
+)
 from langchain_core.runnables import (
     RunnableConfig,
     RunnableLambda,
