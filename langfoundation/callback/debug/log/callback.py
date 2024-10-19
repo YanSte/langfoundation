@@ -11,7 +11,6 @@ from langchain_core.outputs import LLMResult
 
 from langfoundation.callback.debug.log.type import AsyncLogHandlerType
 
-
 logger = logging.getLogger(None)
 
 

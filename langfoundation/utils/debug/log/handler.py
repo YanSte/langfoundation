@@ -33,8 +33,6 @@ class LogHandler(RichHandler):
 
     def emit(self, record: logging.LogRecord) -> None:
         try:
-            level_style = self.get_level_style(record.levelno)
-            level = record.levelname.upper() + ":    "
             has_title = hasattr(record, "title")
             title = "[ " + getattr(record, "title", f"{record.filename} : {record.funcName}") + " ]"
 

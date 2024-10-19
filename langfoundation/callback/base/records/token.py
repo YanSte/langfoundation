@@ -7,7 +7,6 @@ from strenum import LowercaseStrEnum
 
 from langfoundation.callback.base.records.base import BaseRecord
 
-
 # Stream Token
 # ---
 

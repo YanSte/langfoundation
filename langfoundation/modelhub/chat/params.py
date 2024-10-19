@@ -3,7 +3,6 @@ from typing import Optional
 
 from pydantic import BaseModel, Field
 
-
 logger = logging.getLogger(__name__)
 
 
@@ -24,3 +23,6 @@ class ChatModelParams(BaseModel):
         default=None,
         description="The maximum number of tokens to generate.",
     )
+
+    class Config:
+        extra = "allow"

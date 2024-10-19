@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from enum import auto
 import re
+from enum import auto
 from typing import List, Optional
 
 from strenum import UppercaseStrEnum

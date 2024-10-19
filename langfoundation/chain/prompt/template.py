@@ -1,6 +1,5 @@
 from langchain_core.prompts.chat import HumanMessagePromptTemplate, SystemMessagePromptTemplate
 
-
 ################################################################################
 # Static Node prompts
 # This file contains all the static prompts used in the nodes

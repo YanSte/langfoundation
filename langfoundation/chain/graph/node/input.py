@@ -3,10 +3,10 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from typing import List, Optional
 
-from langchain_core.prompts.chat import ChatPromptTemplate
-from langfoundation.chain.graph.node.partial import Partial
+from langchain_core.prompts.chat import BaseMessagePromptTemplate, ChatPromptTemplate
 from pydantic import BaseModel
-from langchain_core.prompts.chat import BaseMessagePromptTemplate
+
+from langfoundation.chain.graph.node.partial import Partial
 from langfoundation.chain.graph.node.template import BASE_THINK_STEP_BY_STEP_HUMAIM_PROMPT_TEMPLATE
 
 

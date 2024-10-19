@@ -14,14 +14,14 @@ from typing import (
     Union,
 )
 
-from langchain.chains.base import Chain as BaseChain
+from langchain.chains.base import Chain as LCBaseChain
 from langchain_core.callbacks import (
     AsyncCallbackManagerForChainRun,
     CallbackManagerForChainRun,
 )
 from langchain_core.runnables import RunnableConfig
 
-from langfoundation.chain.pydantic.errors.error import PydanticChainError
+from langfoundation.errors.chain import ChainError
 from langfoundation.errors.max_retry import MaxRetryError
 from langfoundation.utils.pydantic.base_model import (
     get_type_base_generic,
@@ -39,17 +39,17 @@ Input = TypeVar("Input", bound=BaseModel)
 Output = TypeVar("Output", bound=BaseModel)
 
 
-class BasePydanticChain(
-    BaseChain,
+class BaseChain(
+    LCBaseChain,
     Generic[Input, Output],
     ABC,
 ):
     """
-    The BasePydanticChain class is a generic abstract base class that extends from the Chain class of Langchain.
+    The BaseChain class is a generic abstract base class that extends from the Chain class of Langchain.
     This class is designed to work with the Runnable Dict Chain of Lanchain, and allows for casting
     into Pydantic models without any disruptions to the updates of Langchain.
 
-    The BasePydanticChain class can work with any types of Input and Output that are subclasses of
+    The BaseChain class can work with any types of Input and Output that are subclasses of
     the BaseModel from the pydantic library.
 
     - To use this class, subclass it and override the 'acall' or 'call' methods.
@@ -148,12 +148,16 @@ class BasePydanticChain(
 
         This asynchronous method is designed to handle any fallback operations in the event of an error during the call.
         """
-        raise NotImplementedError("Not implemented, `fallback_max_retries` with True but `afallback` is not implemented.")
+        raise NotImplementedError(
+            "Not implemented, `fallback_max_retries` with True but `afallback` is not implemented."
+        )
 
     # Sync
     # ---
 
-    def call(self, input: Input, run_manager: Optional[CallbackManagerForChainRun]) -> Output:
+    def call(
+        self, input: Input, run_manager: Optional[CallbackManagerForChainRun]
+    ) -> Output:
         """
         Abstract method that must be implemented by subclasses.
 
@@ -172,7 +176,9 @@ class BasePydanticChain(
 
         This method is designed to handle any fallback operations in the event of an error during the call.
         """
-        raise NotImplementedError("Not implemented, `fallback_max_retries` with True but `fallback` is not implemented.")
+        raise NotImplementedError(
+            "Not implemented, `fallback_max_retries` with True but `fallback` is not implemented."
+        )
 
     # Invoke
     # ---
@@ -207,7 +213,7 @@ class BasePydanticChain(
                 )
             return output
 
-        except PydanticChainError as e:
+        except ChainError as e:
             logger.error(
                 e,
                 stack_info=True,
@@ -216,7 +222,7 @@ class BasePydanticChain(
             raise e
 
         except Exception as e:
-            error = PydanticChainError(origin=self._chain_type, error=e)
+            error = ChainError(origin=self._chain_type, error=e)
             logger.error(
                 e,
                 stack_info=True,
@@ -256,7 +262,7 @@ class BasePydanticChain(
 
             return output
 
-        except PydanticChainError as e:
+        except ChainError as e:
             logger.error(
                 e,
                 stack_info=True,
@@ -265,7 +271,7 @@ class BasePydanticChain(
             raise e
 
         except Exception as e:
-            error = PydanticChainError(origin=self._chain_type, error=e)
+            error = ChainError(origin=self._chain_type, error=e)
             logger.error(
                 e,
                 stack_info=True,
@@ -301,7 +307,7 @@ class BasePydanticChain(
 
             return output
 
-        except PydanticChainError as e:
+        except ChainError as e:
             logger.error(
                 e,
                 stack_info=True,
@@ -310,7 +316,7 @@ class BasePydanticChain(
             raise e
 
         except Exception as e:
-            error = PydanticChainError(origin=self._chain_type, error=e)
+            error = ChainError(origin=self._chain_type, error=e)
             logger.error(
                 e,
                 stack_info=True,
@@ -345,7 +351,7 @@ class BasePydanticChain(
                 )
             return output
 
-        except PydanticChainError as e:
+        except ChainError as e:
             logger.error(
                 e,
                 stack_info=True,
@@ -354,7 +360,7 @@ class BasePydanticChain(
             raise e
 
         except Exception as e:
-            error = PydanticChainError(origin=self._chain_type, error=e)
+            error = ChainError(origin=self._chain_type, error=e)
             logger.error(
                 e,
                 stack_info=True,
@@ -412,20 +418,22 @@ class BasePydanticChain(
                         retries += 1
                         logger.warning(
                             retry_errors,
-                            extra={"title": "[RETRY] _acall" + " : " + self._chain_type},
+                            extra={
+                                "title": "[RETRY] _acall" + " : " + self._chain_type
+                            },
                         )
 
-            # If the fallback failed, raise a PydanticChainError
-            chain_error: PydanticChainError
-            if isinstance(origin_error, PydanticChainError):
+            # If the fallback failed, raise a ChainError
+            chain_error: ChainError
+            if isinstance(origin_error, ChainError):
                 track = self._chain_type + " -> " + origin_error.origin
-                chain_error = PydanticChainError(
+                chain_error = ChainError(
                     track,
                     origin_error.error,
                     custom_message=f"From Fallback to Fallback failed. From orign error:\n{str(origin_error)}\n",
                 )
             else:
-                chain_error = PydanticChainError(self._chain_type, origin_error)
+                chain_error = ChainError(self._chain_type, origin_error)
 
             logger.error(
                 chain_error,
@@ -470,19 +478,21 @@ class BasePydanticChain(
                         retries += 1
                         logger.warning(
                             retry_errors,
-                            extra={"title": "[RETRY] _acall" + " : " + self._chain_type},
+                            extra={
+                                "title": "[RETRY] _acall" + " : " + self._chain_type
+                            },
                         )
 
-            chain_error: PydanticChainError
-            if isinstance(origin_error, PydanticChainError):
+            chain_error: ChainError
+            if isinstance(origin_error, ChainError):
                 track = self._chain_type + " -> " + origin_error.origin
-                chain_error = PydanticChainError(
+                chain_error = ChainError(
                     track,
                     origin_error.error,
                     custom_message=f"From Fallback to Fallback failed. From orign error:\n{str(origin_error)}\n",
                 )
             else:
-                chain_error = PydanticChainError(self._chain_type, origin_error)
+                chain_error = ChainError(self._chain_type, origin_error)
 
             logger.error(
                 chain_error,
@@ -495,7 +505,9 @@ class BasePydanticChain(
     # Private Convert
     # ---
 
-    def _convert_input_model_to_dict(self, input: Union[Input, Dict[str, Any], BaseModel]) -> Dict[str, Any]:
+    def _convert_input_model_to_dict(
+        self, input: Union[Input, Dict[str, Any], BaseModel]
+    ) -> Dict[str, Any]:
         if isinstance(input, BaseModel):
             return input.model_dump()
 
@@ -503,5 +515,7 @@ class BasePydanticChain(
 
     def _convert_output_model_to_dict(self, output: Output) -> Dict[str, Any]:
         if not isinstance(output, self.OutputModelType):
-            raise TypeError(f"Error Output not typeof {self.OutputModelType}, Got: {type(output)}")
+            raise TypeError(
+                f"Error Output not typeof {self.OutputModelType}, Got: {type(output)}"
+            )
         return output.model_dump()

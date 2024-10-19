@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import Optional
 
 
-class PydanticChainError(Exception):
+class ChainError(Exception):
     """Custom exception class for errors that occur within Chain."""
 
     origin: str

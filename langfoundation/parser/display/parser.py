@@ -10,7 +10,6 @@ from langfoundation.callback.base.records.token import (
     TokenStreamState,
 )
 
-
 TBaseModel = TypeVar("TBaseModel", bound=BaseModel)
 
 

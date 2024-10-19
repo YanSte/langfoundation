@@ -1,10 +1,10 @@
 import json
 from typing import Dict, List
 
+import pytest
 from langchain_core.exceptions import OutputParserException
 from langchain_core.outputs import Generation
 from pydantic import BaseModel, Field
-import pytest
 
 from langfoundation.parser.pydantic.parser import PydanticOutputParser
 

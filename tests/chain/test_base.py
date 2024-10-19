@@ -1,8 +1,8 @@
 from typing import Optional
 
+import pytest
 from langchain_core.callbacks import AsyncCallbackManagerForChainRun, CallbackManagerForChainRun
 from pydantic import BaseModel
-import pytest
 
 from langfoundation.chain.pydantic.chain import BasePydanticChain
 

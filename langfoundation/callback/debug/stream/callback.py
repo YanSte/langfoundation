@@ -9,7 +9,6 @@ from langfoundation.callback.base.records.retriever import RetrieverRecord
 from langfoundation.callback.base.records.token import TokenStream, TokenStreamState
 from langfoundation.callback.base.records.tool import ToolRecord
 
-
 logger = logging.getLogger(None)
 
 

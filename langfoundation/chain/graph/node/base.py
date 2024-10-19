@@ -4,29 +4,31 @@ import logging
 from abc import ABC
 from typing import Any, Callable, Dict, List, Optional, Tuple, Type, TypeVar, Union
 
-from langchain_core.callbacks import AsyncCallbackManagerForChainRun
+from langchain_core.callbacks import AsyncCallbackManagerForChainRun, Callbacks
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.language_models.chat_models import BaseChatModel
+from langchain_core.messages import HumanMessage
 from langchain_core.output_parsers.base import BaseOutputParser
 from langchain_core.prompts.base import BasePromptTemplate
-from langchain_core.prompts.chat import SystemMessagePromptTemplate
+from langchain_core.prompts.chat import HumanMessagePromptTemplate, SystemMessagePromptTemplate
 from langchain_core.runnables import (
     RunnableConfig,
     RunnableLambda,
     RunnableSerializable,
 )
 from pydantic import BaseModel, Field
-from langchain_core.prompts.chat import HumanMessagePromptTemplate
+
 from langfoundation.callback.base.tags import Tags
+from langfoundation.chain.chain.base import BaseChain
 from langfoundation.chain.graph.node.input import BaseInput
-from langfoundation.chain.graph.node.template import BASE_EMTPY_MSG_HUMAIM_PROMPT_TEMPLATE
-from langfoundation.chain.pydantic.chain import BasePydanticChain
+from langfoundation.chain.graph.node.template import (
+    BASE_EMTPY_MSG_HUMAIM_PROMPT_TEMPLATE,
+)
 from langfoundation.errors.max_retry import MaxRetryError
 from langfoundation.modelhub.chat.config import ChatModelConfiguration
 from langfoundation.modelhub.chat.params import ChatModelParams
 from langfoundation.parser.pydantic.parser import PydanticOutputParser
 from langfoundation.utils.py.py_class import has_method_implementation
-from langchain_core.messages import HumanMessage
 
 logger = logging.getLogger(__name__)
 
@@ -38,15 +40,15 @@ Output = TypeVar("Output", bound=BaseModel)
 
 
 class BaseNodeChain(
-    BasePydanticChain[Input, Output],
+    BaseChain[Input, Output],
     ABC,
 ):
     """
-    BaseNodeChain is an abstract class that extends from BasePydanticChain.
+    BaseNodeChain is an abstract class that extends from BaseChain.
     It is designed to work with the Runnable Dict Chain of Lanchain, and allows for casting
     into Pydantic models without any disruptions to the updates of Langchain.
 
-    The BasePydanticChain class can work with any types of Input and Output that are subclasses of
+    The BaseChain class can work with any types of Input and Output that are subclasses of
     the BaseModel from the pydantic library.
 
     To use this class, subclass it and override the 'acall' or 'call' methods.
@@ -61,11 +63,12 @@ class BaseNodeChain(
     model_configuration: ChatModelConfiguration = Field(
         description="The model configuration to be used for invocation.",
     )
-    model_parameters: ChatModelParams = Field(
+    override_model_parameters: Optional[ChatModelParams] = Field(
         description=" Specifies the size of the model to be used for invocation.",
+        default=None,
     )
-    model_fallback_parameters: ChatModelParams = Field(
-        description="The model size to be used for fallback.",
+    override_model_fallback_parameters: Optional[ChatModelParams] = Field(
+        description="The model size to be used for fallback.", default=None
     )
 
     @property
@@ -233,14 +236,17 @@ class BaseNodeChain(
     # Chain
     # ---
 
-    def _llm(
-        self,
-    ) -> BaseChatModel:
+    def _llm(self, callback: Callbacks = None) -> BaseChatModel:
         """
         Returns the output parser.
         """
-        llm = self.model_configuration.get_model(self.model_parameters)
+        llm: BaseChatModel
+        if self.override_model_parameters:
+            llm = self.model_configuration.get_model(self.override_model_parameters)
+        else:
+            llm = self.model_configuration.model
 
+        llm.callbacks = callback
         if hasattr(llm, "streaming"):
             llm.streaming = self.is_display  # type: ignore
 
@@ -255,10 +261,16 @@ class BaseNodeChain(
         """
         Returns the output parser.
         """
-        llm = self.model_configuration.get_model(self.model_fallback_parameters)
+        llm: BaseChatModel
+        if self.override_model_fallback_parameters:
+            llm = self.model_configuration.get_model(self.override_model_fallback_parameters)
+        else:
+            llm = self.model_configuration.model
 
         if hasattr(llm, "streaming"):
             llm.streaming = self.is_display  # type: ignore
+        if hasattr(llm, "stream"):
+            llm.stream = self.is_display  # type: ignore
 
         # We assum if not display, then it is not streaming
         llm.disable_streaming = not self.is_display
