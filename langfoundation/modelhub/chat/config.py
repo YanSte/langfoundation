@@ -1,5 +1,4 @@
 import logging
-from functools import cache
 
 from langchain_core.language_models.chat_models import BaseChatModel
 from pydantic import BaseModel, Field
@@ -44,8 +43,7 @@ class ChatModelConfiguration(BaseModel):
         """,
     )
 
-    @cache
-    def get_model(self, params: ChatModelParams) -> BaseChatModel:
+    def get_model(self, params: ChatModelParams = ChatModelParams()) -> BaseChatModel:
         model_instance = self.model.model_copy(deep=True)
         self._update_model_in_place(model=model_instance, params=params)
         return model_instance
