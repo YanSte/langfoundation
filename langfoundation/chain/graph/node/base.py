@@ -274,8 +274,6 @@ class BaseNodeChain(
 
         if hasattr(llm, "streaming"):
             llm.streaming = self.is_display  # type: ignore
-        if hasattr(llm, "stream"):
-            llm.stream = self.is_display  # type: ignore
 
         # We assum if not display, then it is not streaming
         llm.disable_streaming = not self.is_display
