@@ -3,8 +3,6 @@ import logging
 from langchain_core.language_models.chat_models import BaseChatModel
 from pydantic import BaseModel, Field
 
-from langfoundation.modelhub.chat.params import ChatModelParams
-
 logger = logging.getLogger(__name__)
 
 
@@ -34,29 +32,3 @@ class ChatModelConfiguration(BaseModel):
         default=True,
         description="Whether the provider supports json mode.",
     )
-    keep_model_params: bool = Field(
-        default=False,
-        description="""
-        Whether to keep the defined model parameters.
-
-        Else if ChatModelParams the params is override.
-        """,
-    )
-
-    def get_model(self, params: ChatModelParams = ChatModelParams()) -> BaseChatModel:
-        model_instance = self.model.model_copy(deep=True)
-        self._update_model_in_place(model=model_instance, params=params)
-        return model_instance
-
-    def _update_model_in_place(self, model: BaseChatModel, params: ChatModelParams) -> None:
-        try:
-            new_values = params.model_dump(exclude_unset=True)
-
-            for key, value in new_values.items():
-                if self.keep_model_params and hasattr(model, key):
-                    continue  # Skip updating this parameter
-                setattr(model, key, value)
-
-        except Exception as e:
-            logger.error(f"Failed to update model in place: {e}", exc_info=True)
-            raise

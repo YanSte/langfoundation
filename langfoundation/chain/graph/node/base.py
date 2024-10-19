@@ -245,7 +245,8 @@ class BaseNodeChain(
         """
         llm: BaseChatModel
         if self.override_model_parameters:
-            llm = self.model_configuration.get_model(self.override_model_parameters)
+            llm = self.model_configuration.model.model_copy()
+            self._update_model_in_place(model=llm, params=self.override_model_parameters)
         else:
             llm = self.model_configuration.model
 
@@ -266,7 +267,8 @@ class BaseNodeChain(
         """
         llm: BaseChatModel
         if self.override_model_fallback_parameters:
-            llm = self.model_configuration.get_model(self.override_model_fallback_parameters)
+            llm = self.model_configuration.model.model_copy()
+            self._update_model_in_place(model=llm, params=self.override_model_fallback_parameters)
         else:
             llm = self.model_configuration.model
 
@@ -494,3 +496,16 @@ class BaseNodeChain(
             pre_transform=pre_transform,
             post_validation=post_validation,
         )
+
+    def _update_model_in_place(self, model: BaseChatModel, params: ChatModelParams) -> None:
+        try:
+            new_values = params.model_dump(exclude_unset=True)
+
+            for key, value in new_values.items():
+                if hasattr(model, key):
+                    continue  # Skip updating this parameter
+                setattr(model, key, value)
+
+        except Exception as e:
+            logger.error(f"Failed to update model in place: {e}", exc_info=True)
+            raise
