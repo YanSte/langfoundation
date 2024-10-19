@@ -5,7 +5,7 @@ from langgraph.graph import StateGraph
 from langgraph.graph.state import CompiledStateGraph
 from pydantic import BaseModel, Field
 
-from langfoundation.chain.graph.graph.base import BasePydanticGraphChain
+from langfoundation.chain.graph.graph.base import BaseGraphChain
 from langfoundation.chain.pydantic.errors.error import PydanticChainError
 
 
@@ -25,7 +25,7 @@ class OutputModel(BaseModel):
     field4: str = Field(description="Field 4")
 
 
-class TestGraphChain(BasePydanticGraphChain[StateModel, InputModel, OutputModel]):
+class TestGraphChain(BaseGraphChain[StateModel, InputModel, OutputModel]):
     @property
     def entry_point(self) -> str:
         return "entry"
@@ -162,7 +162,9 @@ def test_invoke(test_chain: TestGraphChain) -> None:
     assert output_dict["field3"] == 3
 
 
-def test_invoke_declara_state_model_property_with_default_value_no_optional(test_chain: TestGraphChain) -> None:
+def test_invoke_declara_state_model_property_with_default_value_no_optional(
+    test_chain: TestGraphChain,
+) -> None:
     """
     Tests that the invoke method correctly raises a PydanticChainError when the StateModel is not valid.
 
@@ -180,7 +182,7 @@ def test_invoke_declara_state_model_property_with_default_value_no_optional(test
     class OutputModel(BaseModel):
         field2: str = Field(description="Field 2", default=None)
 
-    class TestGraphChain(BasePydanticGraphChain[StateModel, InputModel, OutputModel]):
+    class TestGraphChain(BaseGraphChain[StateModel, InputModel, OutputModel]):
         @property
         def entry_point(self) -> str:
             return "entry"
@@ -206,7 +208,9 @@ def test_invoke_declara_state_model_property_with_default_value_no_optional(test
     assert result.field2 == "updated_fied2"
 
 
-def test_invoke_raises_pydantic_chain_error_with_invalid_state_model_missing_default_value(test_chain: TestGraphChain) -> None:
+def test_invoke_raises_pydantic_chain_error_with_invalid_state_model_missing_default_value(
+    test_chain: TestGraphChain,
+) -> None:
     """
     Tests that the invoke method correctly raises a PydanticChainError when the StateModel is not valid.
 
@@ -224,7 +228,7 @@ def test_invoke_raises_pydantic_chain_error_with_invalid_state_model_missing_def
     class OutputModel(BaseModel):
         field2: str = Field(description="Field 2", default=None)
 
-    class TestGraphChain(BasePydanticGraphChain[StateModel, InputModel, OutputModel]):
+    class TestGraphChain(BaseGraphChain[StateModel, InputModel, OutputModel]):
         @property
         def entry_point(self) -> str:
             return "entry"
@@ -255,7 +259,9 @@ def test_invoke_raises_pydantic_chain_error_with_invalid_state_model_missing_def
     assert "Optional" in str(exc_info.value)
 
 
-def test_invoke_raises_pydantic_chain_error_with_missing_property_in_state_model_from_input(test_chain: TestGraphChain) -> None:
+def test_invoke_raises_pydantic_chain_error_with_missing_property_in_state_model_from_input(
+    test_chain: TestGraphChain,
+) -> None:
     """
     Tests that the invoke method correctly raises a PydanticChainError when the StateModel is not valid.
 
@@ -273,7 +279,7 @@ def test_invoke_raises_pydantic_chain_error_with_missing_property_in_state_model
     class OutputModel(BaseModel):
         field2: str = Field(description="Field 2", default=None)
 
-    class TestGraphChain(BasePydanticGraphChain[StateModel, InputModel, OutputModel]):
+    class TestGraphChain(BaseGraphChain[StateModel, InputModel, OutputModel]):
         @property
         def entry_point(self) -> str:
             return "entry"
@@ -303,7 +309,9 @@ def test_invoke_raises_pydantic_chain_error_with_missing_property_in_state_model
     assert "required" in str(exc_info.value)
 
 
-def test_invoke_raises_pydantic_chain_error_with_missing_property_in_state_model_from_output(test_chain: TestGraphChain) -> None:
+def test_invoke_raises_pydantic_chain_error_with_missing_property_in_state_model_from_output(
+    test_chain: TestGraphChain,
+) -> None:
     """
     Tests that the invoke method correctly raises a PydanticChainError when the StateModel is not valid.
 
@@ -321,7 +329,7 @@ def test_invoke_raises_pydantic_chain_error_with_missing_property_in_state_model
     class OutputModel(BaseModel):
         field2: str = Field(description="Field 2", default=None)
 
-    class TestGraphChain(BasePydanticGraphChain[StateModel, InputModel, OutputModel]):
+    class TestGraphChain(BaseGraphChain[StateModel, InputModel, OutputModel]):
         @property
         def entry_point(self) -> str:
             return "entry"

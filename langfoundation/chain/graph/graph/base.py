@@ -46,17 +46,17 @@ Input = TypeVar("Input", bound=BaseModel)
 Ouput = TypeVar("Ouput", bound=BaseModel)
 
 
-class BasePydanticGraphChain(
+class BaseGraphChain(
     LCBaseChain,
     Generic[State, Input, Ouput],
     ABC,
 ):
     """
-    The BasePydanticGraphChain class is a generic abstract base class for Graph that extends from the Chain class of Langchain.
+    The BaseGraphChain class is a generic abstract base class for Graph that extends from the Chain class of Langchain.
     This class is designed to work with the Runnable Dict Chain of Lanchain, and allows for casting into Pydantic models without
     any disruptions to the updates of Langchain.
 
-    The BasePydanticGraphChain class can work with any types of State, Input, Output that are subclasses of the BaseModel from the pydantic.
+    The BaseGraphChain class can work with any types of State, Input, Output that are subclasses of the BaseModel from the pydantic.
 
     - To use this class, subclass it and override the 'entry_point', 'finish_points', 'workflow' methods.
     - Then, use the 'ainvoke_as_model' or 'invoke_as_model' methods to call the chain as Input and get Output BaseModel Pydantic.
