@@ -1,13 +1,15 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import List, Optional
+from typing import Any, Dict, List, Optional
 
 from langchain_core.prompts.chat import BaseMessagePromptTemplate, ChatPromptTemplate
 from pydantic import BaseModel
 
 from langfoundation.chain.graph.node.partial import Partial
-from langfoundation.chain.graph.node.template import BASE_THINK_STEP_BY_STEP_HUMAIM_PROMPT_TEMPLATE
+from langfoundation.chain.graph.node.template import (
+    BASE_THINK_STEP_BY_STEP_HUMAIM_PROMPT_TEMPLATE,
+)
 
 
 class BaseInput(BaseModel, ABC):
@@ -47,6 +49,8 @@ class BaseInput(BaseModel, ABC):
     @property
     def step_by_step_prompt_template(self) -> BaseMessagePromptTemplate:
         return BASE_THINK_STEP_BY_STEP_HUMAIM_PROMPT_TEMPLATE
+
+    extra: Dict[str, Any] = {}
 
     class Config:
         arbitrary_types_allowed = True

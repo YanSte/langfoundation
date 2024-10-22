@@ -103,6 +103,10 @@ class BaseNodeChain(
     def with_think_step_by_step(self) -> bool:
         return True
 
+    @property
+    def with_additional_input(self) -> bool:
+        return False
+
     # Prompt
     # ---
 
@@ -189,7 +193,10 @@ class BaseNodeChain(
             prompt_template,
             config,
         )
-
+        if self.with_additional_input:
+            input = await self._extra_input(input, run_manager)
+        input_data.update(input.model_dump(exclude={"extra"}))
+        input_data.update(input.extra)
         return await chain.ainvoke(
             input=input_data,
             config=config,
@@ -230,11 +237,22 @@ class BaseNodeChain(
             config,
         )
 
+        if self.with_additional_input:
+            input = await self._extra_input(input, run_manager)
+        input_data.update(input.model_dump(exclude={"extra"}))
+        input_data.update(input.extra)
         return await chain.ainvoke(
             input=input_data,
             config=config,
             return_only_outputs=True,
         )
+
+    async def _extra_input(
+        self,
+        input: Input,
+        run_manager: Optional[AsyncCallbackManagerForChainRun],
+    ) -> Input:
+        return input
 
     # Chain
     # ---
